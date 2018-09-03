@@ -4,6 +4,7 @@
 
 
 #include <iostream>
+#include <string>
 #include <windows.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -29,8 +30,6 @@ using namespace std;
     /////////////////////////////////////////////////////////////////////////////
 
 void IniciaVar();
-void Opciones();
-void EnviarJugada();
 void InicializaRegistros();		            //inicia los registros a su estado por defecto
 void ReiniciaRegistros();		            //antes de cada nueva partida hay q reiniciar varios registros
 void LeeFEN();								//prepara todos los registros necesarios para q comience la partida (nueva o con introduccion de FEN)
@@ -84,7 +83,6 @@ BYTE TresRepet();							//permite determinar si la partida debe acabar por regla
 BYTE Libro();                               //el libro de aperturas propio del modulo
 void Anotar();                              //registra la partida en curso a medida que se realizan las jugadas
 void ExportarPartida();
-void MostrarEstadisticas();
 void ManejarReloj();
 
 void QuickSort(int a[],int,int, BYTE);
@@ -111,12 +109,11 @@ void QQuickSort(int a[],int,int, BYTE);
 jmp_buf env;								//esta es para la funcion longjump q permite salir de negamax rapido
 
 ///////////////////Variables globales/////////////////////////////////
-HANDLE pipe;
 BOOL result;
 
 
-int segunda,test,cantpartidas;          //registros para la comunicacion con Beta
-BYTE nueva,testeando,resultado;
+int segunda;          //registros para la comunicacion con Beta
+BYTE nueva,resultado;
 BYTE turno,turno_c,colorpic,bien,semibien,inicio,fin,pieza;
 BYTE prof_max,jugadas[MAXPROF][600],Qcapturas[40][80],Qcorona[40];
 BYTE comio[MAXPROF],alpaso[MAXPROF],derechos_enroque[MAXPROF],vp[MAXPROF][3];
@@ -240,7 +237,6 @@ int main(void)
     QueryPerformanceFrequency((LARGE_INTEGER*)&freq);   //toma la performance de la compu para tener de base en el reloj
     timerFrequency = (1.0/freq);                        //saca la frecuencia de la cpu como base para el reloj
 
-    Opciones();     //permite elegir el modo de juego (humano vs quasar, o conexion entre modulos a travez de named pipe)
 	InicializaMasks();			//inicializa las mascaras usadas para trabajar con bits a lo largo de todo el programa
 	IniciaBitboards();
 	IniciaRPr();
@@ -271,8 +267,6 @@ int main(void)
                     wcout << "profundidad " << prof_max - 1 << endl;
                 else
                     wcout << "profundidad " << prof_max << endl;
-				if (testeando)              //si quiero q el programa juegue contra una version mas nueva estoy testeando
-                    EnviarJugada();         //se encarga de pasarle a travez de la named pipe la jugada al otro motor
 			}//fin del turno del pic
 			//a partir de aca la jugada se hace si o si
 			Jugar(inicio,fin,bien);						//actualiza los regs necesarios para q la jugada se realice (muy similar a HacerJugada pero no igual)
@@ -284,7 +278,6 @@ int main(void)
 		t_transcurrido = ((t_fin - t_inicio) * timerFrequency);
 		wcout << t_transcurrido << endl;
 		ExportarPartida();                              //que saque la partida con el formato del fritz
-        MostrarEstadisticas();
 	};//end while de todo el programa (del q no se sale nunca)
 }
 
@@ -300,34 +293,7 @@ void IniciaVar()
     cortesnulo = 0;
     llamadasevaluar = 0;
     cortes_inut_inversa = 0;
-/*
-    set_maskA1 =                                  //soy un manco y no pude escribir una funcion para representar esta serie
-    {                                             //por eso lo inicializo asi y no en InicializaMasks()
-        0x10000000,0x200000,0x8000,0x400,0x40,0x8,0x2,0x1,
-        0x1000000000,0x20000000,0x400000,0x10000,0x800,0x80,0x10,0x4,
-        0x80000000000,0x2000000000,0x40000000,0x800000,0x20000,0x1000,0x100,0x20,
-        0x2000000000000,0x100000000000,0x4000000000,0x80000000,0x1000000,0x40000,0x2000,0x200,
-        0x40000000000000,0x4000000000000,0x200000000000,0x8000000000,0x100000000,0x2000000,0x80000,0x4000,
-        0x400000000000000,0x80000000000000,0x8000000000000,0x400000000000,0x10000000000,0x200000000,0x4000000,0x100000,
-        0x2000000000000000,0x800000000000000,0x100000000000000,0x10000000000000,0x800000000000,0x20000000000,0x400000000,0x8000000,
-        0x8000000000000000,0x4000000000000000,0x1000000000000000,0x200000000000000,0x20000000000000,0x1000000000000,0x40000000000,0x800000000
-    };
-    set_maskA8 =
-    {
-        0x1,0x4,0x20,0x200,0x4000,0x100000,0x8000000,0x800000000,
-        0x2,0x10,0x100,0x2000,0x80000,0x4000000,0x400000000,0x40000000000,
-        0x8,0x80,0x1000,0x40000,0x2000000,0x200000000,0x20000000000,0x1000000000000,
-        0x40,0x800,0x20000,0x1000000,0x100000000,0x10000000000,0x800000000000,0x20000000000000,
-        0x400,0x10000,0x800000,0x80000000,0x8000000000,0x400000000000,0x10000000000000,0x200000000000000,
-        0x8000,0x400000,0x40000000,0x4000000000,0x200000000000,0x8000000000000,0x100000000000000,0x1000000000000000,
-        0x200000,0x20000000,0x2000000000,0x100000000000,0x4000000000000,0x80000000000000,0x800000000000000,0x4000000000000000,
-        0x10000000,0x1000000000,0x80000000000,0x2000000000000,0x40000000000000,0x400000000000000,0x2000000000000000,0x8000000000000000
-    };
-*/
-//    for (int it = 0; it < 64; it++)
-//    {
-//        set_maskA8[it] = it * ;
-//    }
+
     mask_efgh = 0xf0f0f0f0f0f0f0f0;
     mask_fgh = 0xe0e0e0e0e0e0e0e0;
     mask_abc = 0x0707070707070707;
@@ -342,112 +308,6 @@ void IniciaVar()
     OOO[1] = 0x000000000000000E;
 
     mejortt = 0;
-}
-
-void Opciones()
-{
-    char t;
-
-    printf("Jugar contra la maquina?"); //permite elegir entre humano vs maquina o quasar contra quasar beta
-	scanf(" %c",&t);
-	if (t == 'y')
-		testeando = 0;
-	else
-    {
-		testeando = 1;                  //si se quiere testear contra el otro programa entonces se crea la named pipe
-        wcout << "Creating an instance of a named pipe..." << endl;
-
-        // Create a pipe to send data
-        pipe = CreateNamedPipe
-        (
-            "\\\\.\\pipe\\my_pipe", // name of the pipe
-            PIPE_ACCESS_DUPLEX, // 2-way pipe
-            PIPE_TYPE_BYTE, // send data as a byte stream
-            1, // only allow 1 instance of this pipe
-            0, // no outbound buffer
-            0, // no inbound buffer
-            0, // use default wait time
-            NULL // use default security attributes
-        );
-
-        if (pipe == NULL || pipe == INVALID_HANDLE_VALUE)
-        {
-            wcout << "Failed to create outbound pipe instance.";
-            // look up error code here using GetLastError()
-            system("pause");
-        }
-
-        wcout << "Waiting for a client to connect to the pipe..." << endl;
-
-        // This call blocks until a client process connects to the pipe
-        result = ConnectNamedPipe(pipe, NULL);
-        if (!result)
-        {
-            wcout << "Failed to make connection on named pipe." << endl;
-            // look up error code here using GetLastError()
-            CloseHandle(pipe); // close the pipe
-            system("pause");
-        }
-
-        wcout << "Conexion establecida" << endl;
-    }
-}
-
-void EnviarJugada()
-{
-    wchar_t enviar[4];
-
-    enviar[0] = a;
-    enviar[1] = b;
-    enviar[2] = c;
-    enviar[3] = d;
-    const wchar_t *data = enviar;
-    DWORD numBytesWritten = 0;
-    result = WriteFile
-    (
-        pipe, // handle to our outbound pipe
-        data, // data to send
-        4 * sizeof(wchar_t), // length of data to send (bytes)
-        &numBytesWritten, // will store actual amount of data sent
-        NULL // not using overlapped IO
-    );
-    if (!result)
-    {
-        wcout << "Failed to send data." << endl;
-        system("pause");
-    }
-}
-
-void MostrarEstadisticas()
-{
-    if (test)                                       //si estamos en match entre modulos
-    {
-        if (cantpartidas == 19)     //si esta es la ultima partida del test
-        {
-            test = 0;               //bajo la bandera para q la proxima vez q entre en LeeFen sepa q acabo y pregunte
-            cantpartidas = 0;       //reinicio el contador tambien
-        }
-        if (resultado == TABLAS)
-        {
-            empates++;
-            wcout << "Resultado: 1/2 - 1/2" << endl;
-        }
-        else
-        {
-            if (((resultado == BLANCASGANAN) && (colorpic == blancas))||((resultado == NEGRASGANAN) && (colorpic == negras)))
-            {
-                motorviejo++;
-                wcout << "Resultado: 1 - 0" << endl;        //1-0 significa q gano el motor viejo no q ganaron blancas
-            }
-            else
-            {
-                motornuevo++;
-                wcout << "Resultado: 0 - 1" << endl;        //0-1 significa q gano el motor nuevo no q ganaron negras
-            }
-        }
-        wcout << "+ " << motorviejo << " = " << empates << " - " << motornuevo << endl;
-        wcout << motorviejo + (empates/2) << "/" << (empates/2) + motornuevo << endl;
-    }
 }
 
 void InicializaRegistros()						//inicializa todos los registros a su valor por defecto
@@ -476,40 +336,12 @@ void ReiniciaRegistros()
 	total_jugadas = 0;							//van 0 jugadas
 	jugadas_reversibles = 0;
 
-    if (!test)                                  //si no estamos testeando una bateria de posiciones damos la posibilidad de
-    {                                           //elegir color
-        printf("Seleccionar color: b,n ");
-        scanf(" %c",&m);
-        if (m == 'b')
-            colorpic = negras;
-        else
-            colorpic = blancas;
-    }
-	if(testeando)                               //si estamos en comunicacion con el otro modulo
-    {
-        wchar_t s[1];
-        if (test)                               //si estamos haciendo match ya tenemos el color de piezas correspondiente
-        {
-            if (colorpic == blancas)
-                s[0] = 'b';
-            else
-                s[0] = 'n';
-        }
-        else                                    //si es una unica partida entonces hay q respetar la eleccion del usuario
-            s[0] = m;
-        const wchar_t *data = s;
-        DWORD numBytesWritten = 0;
-        result = WriteFile                      //le indicamos con q color debe jugar
-        (
-            pipe, // handle to our outbound pipe
-            data, // data to send
-            1 * sizeof(wchar_t), // length of data to send (bytes)
-            &numBytesWritten, // will store actual amount of data sent
-            NULL // not using overlapped IO
-        );
-        if (!result)
-            wcout << "Failed to send data." << endl;
-    }
+    printf("Seleccionar color: b,n ");
+    scanf(" %c",&m);
+    if (m == 'b')
+        colorpic = negras;
+    else
+        colorpic = blancas;
     if (colorpic == blancas)
     {
         if (turno_c == blancas)
@@ -1080,51 +912,12 @@ void EsperaJugada()		//retorna cuando el user jugo algo y obtiene la jugada del 
 	char algeb[4],a1,b1,c1,d1;
 	while (1)
 	{
-        if (testeando)
-        {
-            if (segunda)            //si se vuelve a pasar x aca en modo testeo quiere decir q los motores estan cometiendo
-            {                       //algun error en la posicion por lo q hay algun bug importante.
-                wcout << "Error de comunicacion entre modulos" << endl;
-                system("pause");    //por lo q paro el programa para ver q sucedio
-            }
-            segunda = 1;
-
-            // The read operation will block until there is data to read
-            wchar_t buffer[128];
-            DWORD numBytesRead = 0;
-            result = ReadFile
-            (
-                pipe,
-                buffer, // the data from the pipe will be put here
-                127 * sizeof(wchar_t), // number of bytes allocated
-                &numBytesRead, // this will store number of bytes actually read
-                NULL // not using overlapped IO
-            );
-
-            if (result)
-            {
-                buffer[numBytesRead / sizeof(wchar_t)] = '\0'; // null terminate the string
-                wcout << "Recibido: " << buffer << endl;
-                a = buffer[0];
-                b = buffer[1];
-                c = buffer[2];
-                d = buffer[3];
-            }
-            else
-            {
-                wcout << "Failed to read data from the pipe." << endl;
-                continue;
-            }
-        }
-        else
-        {
-            printf("Introduce una jugada: ");
-            scanf("%s",algeb);
-            a = algeb[0];
-            b = algeb[1];
-            c = algeb[2];
-            d = algeb[3];
-        }
+        printf("Introduce una jugada: ");
+        scanf("%s",algeb);
+        a = algeb[0];
+        b = algeb[1];
+        c = algeb[2];
+        d = algeb[3];
 		if (a!='a'&&a!='b'&&a!='c'&&a!='d'&&a!='e'&&a!='f'&&a!='g'&&a!='h')
 			continue;
 		if (b!='1'&&b!='2'&&b!='3'&&b!='4'&&b!='5'&&b!='6'&&b!='7'&&b!='8')
@@ -5750,153 +5543,26 @@ void LeeFEN()			    //pide informacion del usuario acerca de la posicion inicial
 		{
 			fen[i] = 0;
 		}
-		if (test)                     //si ya se esta corriendo un test
+
+        printf("Nueva partida?: y,n");
+        scanf(" %c",&m);
+        if (m == 'y')
         {
-            cantpartidas++;
-            colorpic ^= 1;              //asi le permite a los motores jugar una partida con cada color para cada posicion
-            switch (cantpartidas / 2)
+            nueva = 1;              //si se pidio iniciar una nueva partida pongo el codigo FEN correcto de una q recien empieza
+            char auxfen[85] = {"rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"};
+            for (i=0;i<85;i++)		//esto es para no tener una lista tan larga hacia abajo
             {
-                case 0:
-                {
-                    wcout << "Posicion 1" << endl;
-                    char auxfen[85] = {"r2qk2r/5pbp/p1np4/1p1Npb2/8/N1P5/PP3PPP/R2QKB1R w KQkq - 0 1"};
-              		for (i=0;i<85;i++)		//esto es para no tener una lista tan larga hacia abajo
-                    {
-                        fen[i] = auxfen[i];
-                    }                           //ahora agrego las primeras jugadas de la partida
-                }break;
-                case 1:
-                {
-                    wcout << "Posicion 2" << endl;
-                    char auxfen[85] = {"r1b2rk1/1pq1bppp/p1nppn2/8/3NP3/1BN1B3/PPP1QPPP/2KR3R w - - 0 1"};
-              		for (i=0;i<85;i++)		//esto es para no tener una lista tan larga hacia abajo
-                    {
-                        fen[i] = auxfen[i];
-                    }
-                }break;
-                case 2:
-                {
-                    wcout << "Posicion 3" << endl;
-                    char auxfen[85] = {"r3k2r/p1qbnppp/1pn1p3/2ppP3/P2P4/2PB1N2/2P2PPP/R1BQ1RK1 b kq - 0 1"};
-              		for (i=0;i<85;i++)		//esto es para no tener una lista tan larga hacia abajo
-                    {
-                        fen[i] = auxfen[i];
-                    }
-                }break;
-                case 3:
-                {
-                    wcout << "Posicion 4" << endl;
-                    char auxfen[85] = {"r1b2rk1/2q1bppp/p2p1n2/npp1p3/3PP3/2P2N1P/PPBN1PP1/R1BQR1K1 b - - 0 1"};
-              		for (i=0;i<85;i++)		//esto es para no tener una lista tan larga hacia abajo
-                    {
-                        fen[i] = auxfen[i];
-                    }
-                }break;
-                case 4:
-                {
-                    wcout << "Posicion 5" << endl;
-                    char auxfen[85] = {"r1bqrnk1/pp2bppp/2p2n2/3p2B1/3P4/2NBPN2/PPQ2PPP/R4RK1 w - - 0 1"};
-              		for (i=0;i<85;i++)		//esto es para no tener una lista tan larga hacia abajo
-                    {
-                        fen[i] = auxfen[i];
-                    }
-                }break;
-                case 5:
-                {
-                    wcout << "Posicion 6" << endl;
-                    char auxfen[85] = {"rnbq1rk1/pp2ppbp/6p1/8/3PP3/5N2/P3BPPP/1RBQK2R b K - 0 1"};
-              		for (i=0;i<85;i++)		//esto es para no tener una lista tan larga hacia abajo
-                    {
-                        fen[i] = auxfen[i];
-                    }
-                }break;
-                case 6:
-                {
-                    wcout << "Posicion 7" << endl;
-                    char auxfen[85] = {"2rq1rk1/p2nbppp/bpp1p3/3p4/2PPP3/1PB3P1/P2N1PBP/R2Q1RK1 b - e3 0 1"};
-              		for (i=0;i<85;i++)		//esto es para no tener una lista tan larga hacia abajo
-                    {
-                        fen[i] = auxfen[i];
-                    }
-                }break;
-                case 7:
-                {
-                    wcout << "Posicion 8" << endl;
-                    char auxfen[85] = {"r1bqnrk1/ppp1npbp/3p2p1/3Pp3/2P1P3/2N1B3/PP2BPPP/R2QNRK1 b - - 0 1"};
-              		for (i=0;i<85;i++)		//esto es para no tener una lista tan larga hacia abajo
-                    {
-                        fen[i] = auxfen[i];
-                    }
-                }break;
-                case 8:
-                {
-                    wcout << "Posicion 9" << endl;
-                    char auxfen[85] = {"r1bq1rk1/ppp1npbp/2np2p1/4p3/2P5/2NPP1P1/PP2NPBP/R1BQ1RK1 b - - 0 1"};
-              		for (i=0;i<85;i++)		//esto es para no tener una lista tan larga hacia abajo
-                    {
-                        fen[i] = auxfen[i];
-                    }
-                }break;
-                case 9:
-                {
-                    wcout << "Posicion 10" << endl;
-                    char auxfen[85] = {"rnb1kb1r/1p3ppp/p2ppn2/6B1/3NPP2/q1N5/P1PQ2PP/1R2KB1R w Kkq - 0 1"};
-              		for (i=0;i<85;i++)		//esto es para no tener una lista tan larga hacia abajo
-                    {
-                        fen[i] = auxfen[i];
-                    }
-                }break;
+                fen[i] = auxfen[i];
             }
         }
-        else
+        else				    //si se pidio introducir la posicion
         {
-            printf("Nueva partida?: y,n");
-            scanf(" %c",&m);
-            if (m == 'y')
-            {
-                nueva = 1;              //si se pidio iniciar una nueva partida pongo el codigo FEN correcto de una q recien empieza
-                char auxfen[85] = {"rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"};
-                for (i=0;i<85;i++)		//esto es para no tener una lista tan larga hacia abajo
-                {
-                    fen[i] = auxfen[i];
-                }
-            }
-            else				    //si se pidio introducir la posicion
-            {
-                nueva = 0;
-                if (testeando)
-                {
-                    printf("Comenzar test entre motores? y,n ");
-                    scanf(" %c",&m);
-                    if (m == 'y')
-                    {
-                        test = 1;               //entra si se desea testear los motores en un match con posiciones prefijadas
-                        cantpartidas = 0;       //inicio contador de partidas del match
-                        colorpic = blancas;     //empieza con blancas la version del motor estable
-                        wcout << "Posicion 1" << endl;
-                        char auxfen[85] = {"r2qk2r/5pbp/p1np4/1p1Npb2/8/N1P5/PP3PPP/R2QKB1R w KQkq - 0 1"};
-                        for (i=0;i<85;i++)		//esto es para no tener una lista tan larga hacia abajo
-                        {
-                            fen[i] = auxfen[i];
-                        }
-                    }
-                    else                //sino solo quiero introducir una posicion particular y q jueguen los motores desde ahi
-                    {
-                        test = 0;
-                        fflush(stdin);
-                        wcout << "Introducir Posicion en formato FEN: " << endl;
-                        gets(fen);	        //introduzco por teclado el codigo FEN
-                    }
-                }
-                else                //sino solo quiero introducir una posicion particular y q inicie desde ahi
-                {
-                    test = 0;
-                    fflush(stdin);
-                    wcout << "Introducir Posicion en formato FEN: " << endl;
-                    gets(fen);	        //introduzco por teclado el codigo FEN
-                }
-            }
+            nueva = 0;
+            fflush(stdin);
+            wcout << "Introducir Posicion en formato FEN: " << endl;
+            gets(fen);	        //introduzco por teclado el codigo FEN
         }
+
 		for (i=0;i<85;i++)	//lee el vector q se recibio
 		{
             if (error)

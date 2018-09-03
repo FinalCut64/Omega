@@ -1,14 +1,15 @@
 # depslib dependency file v1.0
-1535589985 source:c:\users\user\desktop\demián\omega\bitboard.cpp
+1535600916 source:c:\users\user\desktop\demián\omega\bitboard.cpp
 	"bitboard.h"
 
-1535589985 c:\users\user\desktop\demián\omega\bitboard.h
+1535600916 c:\users\user\desktop\demián\omega\bitboard.h
 	"definiciones.h"
 
-1535589985 c:\users\user\desktop\demián\omega\definiciones.h
+1535600916 c:\users\user\desktop\demián\omega\definiciones.h
 
-1535598656 source:c:\users\user\desktop\demián\omega\main.cpp
+1536012500 source:c:\users\user\desktop\demián\omega\main.cpp
 	<iostream>
+	<string>
 	<windows.h>
 	<stdio.h>
 	<stdlib.h>
@@ -19,13 +20,13 @@
 	"bitboard.h"
 	"tt.h"
 
-1535598815 c:\users\user\desktop\demián\omega\global.h
+1535600916 c:\users\user\desktop\demián\omega\global.h
 	"definiciones.h"
 
-1535597365 c:\users\user\desktop\demián\omega\tt.h
+1535600916 c:\users\user\desktop\demián\omega\tt.h
 	"definiciones.h"
 
-1535600260 source:c:\users\user\desktop\demián\omega\tt.cpp
+1535600916 source:c:\users\user\desktop\demián\omega\tt.cpp
 	<windows.h>
 	"global.h"
 	"tt.h"
