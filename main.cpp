@@ -22,18 +22,19 @@ using namespace std;
 
 
 
-
+#define USAR_RELOJ
 
 
     /////////////////////////////////////////////////////////////////////////////
     //                            FUNCIONES LOCALES
     /////////////////////////////////////////////////////////////////////////////
 
+void Uci();
 void IniciaVar();
 void InicializaRegistros();		            //inicia los registros a su estado por defecto
 void ReiniciaRegistros();		            //antes de cada nueva partida hay q reiniciar varios registros
 void LeeFEN();								//prepara todos los registros necesarios para q comience la partida (nueva o con introduccion de FEN)
-void EsperaJugada();						//retorna cuando el user jugo algo y obtiene la jugada del user traducida al formato q entiende el programa
+void EsperaJugada(char[4]);					//retorna cuando el user jugo algo y obtiene la jugada del user traducida al formato q entiende el programa
 void InicializaMasks();						//inicializa las mascaras de columnas, filas set y clear
 void IniciaBitboards();						//inicializa las bitboards ataques_peon,ataques_caballo,alpaso,etc
 void IniciaRPr();                           //genera la tabla q contiene los valores para todas las posiciones del final RP vs r
@@ -109,10 +110,7 @@ void QQuickSort(int a[],int,int, BYTE);
 jmp_buf env;								//esta es para la funcion longjump q permite salir de negamax rapido
 
 ///////////////////Variables globales/////////////////////////////////
-BOOL result;
 
-
-int segunda;          //registros para la comunicacion con Beta
 BYTE nueva,resultado;
 BYTE turno,turno_c,colorpic,bien,semibien,inicio,fin,pieza;
 BYTE prof_max,jugadas[MAXPROF][600],Qcapturas[40][80],Qcorona[40];
@@ -136,7 +134,6 @@ unsigned long long saliointerrumpido,salionormal;	//estas son para ver estadisti
 unsigned long long nodos,Qnodos,nodosnulos,cortesnulo,llamadasevaluar,cortes_inut_inversa;
 unsigned long long cantventanas,falloventana,eficiencia_1,eficiencia_2,eficiencia,qpasaaca;
 float cant_analisis,proftotal,profmedia;					//igual q estas q muestran el nivel de juego promedio de la partida
-float motorviejo,motornuevo,empates;
 
 unsigned long long freq,t_inicio,t_fin;    //para el manejo del tiempo
 double timerFrequency, t_transcurrido;
@@ -227,37 +224,27 @@ BYTE turnos_anteriores[MAXPROF],enroques_anteriores[MAXPROF],alpaso_anteriores[M
 
 int main(void)
 {
-    IniciaVar();
-    InicializaAleatorio();      //deja lista la funcion de generacion de numeros aleatorios necesarias para
-    InicializaZobrist();        //llenar las claves Zobrist
-    Setsize_tt(1048576);        //creo que es 1 MB
-    Setsize_hojastt(1048576);
-    Setsize_evaltt(1048576);
-//    Setsize_perfttt(1048576);
-    QueryPerformanceFrequency((LARGE_INTEGER*)&freq);   //toma la performance de la compu para tener de base en el reloj
-    timerFrequency = (1.0/freq);                        //saca la frecuencia de la cpu como base para el reloj
+    QueryPerformanceCounter((LARGE_INTEGER *)&t_inicio);
+    Uci();
 
-	InicializaMasks();			//inicializa las mascaras usadas para trabajar con bits a lo largo de todo el programa
-	IniciaBitboards();
-	IniciaRPr();
-	InicializaRegistros();		//en cada reinicio del programa hay q iniciar varias variables para q todo ande bien
 	while (1)
 	{
+/*
         LeeFEN();
         InicializaHash();       //una vez configurada la posición se establece la clave hash de la misma
 		ReiniciaRegistros();	//al comenzar una nueva partida hay q reiniciar varios registros para q todo funcione bien (esto inicia la partida)
 //        valoracion = Evaluar();
         QueryPerformanceCounter((LARGE_INTEGER *)&t_inicio);
+*/
 		do						//aca va a estar todo el programa y se va a volver cada vez que se complete un movimiento satisfactorio del humano o del pic
 		{
 			if (turno == 0)//HUMANO)	//entra si le toca jugar al jugador humano
 			{
 				do					//punto de regreso al detectarse un error dado por la funcion legal() en la jugada enviada por el usuario
 				{
-					EsperaJugada();		//retorna cuando el user jugo algo y obtiene la jugada del user traducida al formato q entiende el programa
+//					EsperaJugada();		//retorna cuando el user jugo algo y obtiene la jugada del user traducida al formato q entiende el programa
 					bien = Legal();		//se fija si la jugada es totalmente correcta en terminos legales (FALSE si es ilegal y TRUE si es legal)
 				}while(bien == 0);		//mientras legal retorne falso (osea movimiento ilegal) o no caiga la aguja no salgo
-                segunda = 0;            //reinicio para la proxima jugada
 			}//fin del turno del humano
 			else							//le toca el turno al PIC
 			{
@@ -284,6 +271,24 @@ int main(void)
 /////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////FIN DEL MAIN/////////////////////////////////
 /////////////////////////////////////////////////////////////////////////////
+
+void Init()
+{
+    IniciaVar();
+    InicializaAleatorio();      //deja lista la funcion de generacion de numeros aleatorios necesarias para
+    InicializaZobrist();        //llenar las claves Zobrist
+    Setsize_tt(1048576);        //creo que es 1 MB
+    Setsize_hojastt(1048576);
+    Setsize_evaltt(1048576);
+//    Setsize_perfttt(1048576);
+    QueryPerformanceFrequency((LARGE_INTEGER*)&freq);   //toma la performance de la compu para tener de base en el reloj
+    timerFrequency = (1.0/freq);                        //saca la frecuencia de la cpu como base para el reloj
+
+	InicializaMasks();			//inicializa las mascaras usadas para trabajar con bits a lo largo de todo el programa
+	IniciaBitboards();
+	IniciaRPr();
+	InicializaRegistros();		//en cada reinicio del programa hay q iniciar varias variables para q todo ande bien
+}
 
 void IniciaVar()
 {
@@ -336,12 +341,14 @@ void ReiniciaRegistros()
 	total_jugadas = 0;							//van 0 jugadas
 	jugadas_reversibles = 0;
 
-    printf("Seleccionar color: b,n ");
-    scanf(" %c",&m);
-    if (m == 'b')
+//    printf("Seleccionar color: b,n ");
+//    scanf(" %c",&m);
+//    if (m == 'b')
+//    if(condicion que indique el color al q le toca jugar)
         colorpic = negras;
-    else
-        colorpic = blancas;
+//    else
+//        colorpic = blancas;
+/*
     if (colorpic == blancas)
     {
         if (turno_c == blancas)
@@ -356,6 +363,8 @@ void ReiniciaRegistros()
         else
             turno = HUMANO;
     }
+*/
+    turno = PIC;
     for (i=0; i<2; i++)     //por ultimo reinicio los registros de la historia de la partida
     {
         for (j=0; j<64; j++)
@@ -907,13 +916,14 @@ void IniciaRPr()
     nodos = 1;
 }
 
-void EsperaJugada()		//retorna cuando el user jugo algo y obtiene la jugada del user traducida al formato q entiende el programa
+void EsperaJugada(char algeb[4])		//retorna cuando el user jugo algo y obtiene la jugada del user traducida al formato q entiende el programa
 {
-	char algeb[4],a1,b1,c1,d1;
+//	char algeb[4],a1,b1,c1,d1;
+	char a1,b1,c1,d1;
 	while (1)
 	{
-        printf("Introduce una jugada: ");
-        scanf("%s",algeb);
+//        printf("Introduce una jugada: ");
+//        scanf("%s",algeb);
         a = algeb[0];
         b = algeb[1];
         c = algeb[2];
@@ -931,7 +941,7 @@ void EsperaJugada()		//retorna cuando el user jugo algo y obtiene la jugada del 
 		b1 = b - 0x31;
 		c1 = c - 0x61;
 		d1 = d - 0x31;
-		inicio = (b1 * 8) + a1;		//inicio y fin van de 0 a 63 q es lo q uso en las bitboards y se calculan como 8 * n�columna + n�fila
+		inicio = (b1 * 8) + a1;		//inicio y fin van de 0 a 63 q es lo q uso en las bitboards y se calculan como 8 * numcolumna + numfila
 		fin = (d1 * 8) + c1;
 		if (turno_c == blancas)		//turno_c es el color del turno al q le toca
 		{
@@ -2271,7 +2281,7 @@ void ManejarReloj()
 {
     QueryPerformanceCounter((LARGE_INTEGER *)&t_fin);
     t_transcurrido = ((t_fin - t_inicio) * timerFrequency);
-	if (t_transcurrido > 5)                		//si se supero el tiempo maximo por jugada
+	if (t_transcurrido > 3)                		//si se supero el tiempo maximo por jugada
 	{
 		salir = 1;									//entonces salgo del analisis
         wcout << "Tiempo transcurrido: " << t_transcurrido << endl;
@@ -5544,17 +5554,18 @@ void LeeFEN()			    //pide informacion del usuario acerca de la posicion inicial
 			fen[i] = 0;
 		}
 
-        printf("Nueva partida?: y,n");
-        scanf(" %c",&m);
-        if (m == 'y')
-        {
+//        printf("Nueva partida?: y,n");
+//        scanf(" %c",&m);
+//        if (m == 'y')
+//        {
             nueva = 1;              //si se pidio iniciar una nueva partida pongo el codigo FEN correcto de una q recien empieza
             char auxfen[85] = {"rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"};
             for (i=0;i<85;i++)		//esto es para no tener una lista tan larga hacia abajo
             {
                 fen[i] = auxfen[i];
             }
-        }
+//        }
+/*
         else				    //si se pidio introducir la posicion
         {
             nueva = 0;
@@ -5562,7 +5573,7 @@ void LeeFEN()			    //pide informacion del usuario acerca de la posicion inicial
             wcout << "Introducir Posicion en formato FEN: " << endl;
             gets(fen);	        //introduzco por teclado el codigo FEN
         }
-
+*/
 		for (i=0;i<85;i++)	//lee el vector q se recibio
 		{
             if (error)
