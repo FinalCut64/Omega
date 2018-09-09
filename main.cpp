@@ -1779,6 +1779,27 @@ void Guardar()											//esto sirve para guardar el estado actual de la partid
 	tabA1 = tableroA1;
 	tabA8 = tableroA8;
 	hash_pos2 = hash_pos;                               //tambien guardo la clave hash
+
+
+	piezas_anteriores[0][0] = peones_b;					//guardo la posicion de las piezas del tablero actual en el primer lugar
+	piezas_anteriores[0][1] = caballos_b;
+	piezas_anteriores[0][2] = alfiles_b;
+	piezas_anteriores[0][3] = torres_b;
+	piezas_anteriores[0][4] = damas_b;
+	piezas_anteriores[0][5] = rey_b;
+
+	piezas_anteriores[0][6] = peones_n;
+	piezas_anteriores[0][7] = caballos_n;
+	piezas_anteriores[0][8] = alfiles_n;
+	piezas_anteriores[0][9] = torres_n;
+	piezas_anteriores[0][10] = damas_n;
+	piezas_anteriores[0][11] = rey_n;
+
+	turnos_anteriores[0] = turno_c;						//tambien el turno
+	enroques_anteriores[0] = derechos_enroque[0];		//los derechos de enroque
+	alpaso_anteriores[0] = alpaso[0];					//y la posibilidad de peon al paso
+
+
 }
 
 void Recuperar()

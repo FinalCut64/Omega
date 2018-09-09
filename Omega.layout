@@ -1,10 +1,15 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes" ?>
 <CodeBlocks_layout_file>
 	<FileVersion major="1" minor="0" />
-	<ActiveTarget name="Debug" />
-	<File name="movgen.h" open="0" top="0" tabpos="0" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
+	<ActiveTarget name="Release" />
+	<File name="uci.cpp" open="1" top="0" tabpos="4" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
 		<Cursor>
-			<Cursor1 position="56" topLine="0" />
+			<Cursor1 position="312" topLine="15" />
+		</Cursor>
+	</File>
+	<File name="global.h" open="1" top="0" tabpos="3" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
+		<Cursor>
+			<Cursor1 position="7421" topLine="120" />
 		</Cursor>
 	</File>
 	<File name="tt.cpp" open="0" top="0" tabpos="2" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
@@ -12,34 +17,80 @@
 			<Cursor1 position="2405" topLine="0" />
 		</Cursor>
 	</File>
-	<File name="bitboard.cpp" open="0" top="0" tabpos="6" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
-		<Cursor>
-			<Cursor1 position="2" topLine="0" />
-		</Cursor>
-	</File>
-	<File name="global.h" open="1" top="0" tabpos="3" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
-		<Cursor>
-			<Cursor1 position="140" topLine="0" />
-		</Cursor>
-	</File>
-	<File name="main.cpp" open="1" top="1" tabpos="1" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
-		<Cursor>
-			<Cursor1 position="75947" topLine="1901" />
-		</Cursor>
-	</File>
-	<File name="uci.cpp" open="1" top="0" tabpos="4" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
-		<Cursor>
-			<Cursor1 position="3467" topLine="51" />
-		</Cursor>
-	</File>
 	<File name="tt.h" open="1" top="0" tabpos="5" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
 		<Cursor>
 			<Cursor1 position="1074" topLine="0" />
+		</Cursor>
+	</File>
+	<File name="bitboard.cpp" open="0" top="0" tabpos="6" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
+		<Cursor>
+			<Cursor1 position="2" topLine="0" />
 		</Cursor>
 	</File>
 	<File name="definiciones.h" open="1" top="0" tabpos="2" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
 		<Cursor>
 			<Cursor1 position="2012" topLine="13" />
 		</Cursor>
+	</File>
+	<File name="movgen.h" open="0" top="0" tabpos="0" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
+		<Cursor>
+			<Cursor1 position="56" topLine="0" />
+		</Cursor>
+	</File>
+	<File name="main.cpp" open="1" top="1" tabpos="1" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
+		<Cursor>
+			<Cursor1 position="75747" topLine="1903" />
+		</Cursor>
+		<Folding>
+			<Collapse line="1965" />
+			<Collapse line="2067" />
+			<Collapse line="2301" />
+			<Collapse line="2313" />
+			<Collapse line="2461" />
+			<Collapse line="2476" />
+			<Collapse line="2488" />
+			<Collapse line="2543" />
+			<Collapse line="2581" />
+			<Collapse line="2791" />
+			<Collapse line="2798" />
+			<Collapse line="2841" />
+			<Collapse line="2882" />
+			<Collapse line="2928" />
+			<Collapse line="2974" />
+			<Collapse line="3022" />
+			<Collapse line="3070" />
+			<Collapse line="3116" />
+			<Collapse line="3162" />
+			<Collapse line="3201" />
+			<Collapse line="3240" />
+			<Collapse line="3285" />
+			<Collapse line="3309" />
+			<Collapse line="3325" />
+			<Collapse line="3629" />
+			<Collapse line="3637" />
+			<Collapse line="3652" />
+			<Collapse line="3668" />
+			<Collapse line="3729" />
+			<Collapse line="3770" />
+			<Collapse line="3999" />
+			<Collapse line="4057" />
+			<Collapse line="4108" />
+			<Collapse line="4166" />
+			<Collapse line="4217" />
+			<Collapse line="4456" />
+			<Collapse line="4516" />
+			<Collapse line="4560" />
+			<Collapse line="4620" />
+			<Collapse line="4664" />
+			<Collapse line="4984" />
+			<Collapse line="5001" />
+			<Collapse line="5025" />
+			<Collapse line="5173" />
+			<Collapse line="5298" />
+			<Collapse line="5334" />
+			<Collapse line="5366" />
+			<Collapse line="5397" />
+			<Collapse line="5416" />
+		</Folding>
 	</File>
 </CodeBlocks_layout_file>
