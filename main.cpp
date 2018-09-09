@@ -2301,12 +2301,48 @@ int NegaMax(int alfa,int beta,BYTE prof,BYTE draft)     //alfa y beta son los li
 void ManejarReloj()
 {
     QueryPerformanceCounter((LARGE_INTEGER *)&t_fin);
-    t_transcurrido = ((t_fin - t_inicio) * timerFrequency);
-	if (t_transcurrido > 3)                		//si se supero el tiempo maximo por jugada
+    t_transcurrido = ((t_fin - t_inicio) * timerFrequency * 1000);			//lo pongo en ms
+    if (reloj == blancas)
 	{
-		salir = 1;									//entonces salgo del analisis
-        wcout << "Tiempo transcurrido: " << t_transcurrido << endl;
-		longjmp(env, 0);							//con la funcion longjmp
+		if (winc)		//si hay incremento
+		{
+			if (t_transcurrido > (wtime / 40) + (winc * 0.5))      			//si se supero el tiempo maximo por jugada
+			{
+				salir = 1;													//entonces salgo del analisis
+				wcout << "Tiempo de jugada: " << t_transcurrido << endl;
+				longjmp(env, 0);											//con la funcion longjmp
+			}
+		}
+		else			//sin incremento
+		{
+			if (t_transcurrido > (wtime / 40))           					//si se supero el tiempo maximo por jugada
+			{
+				salir = 1;													//entonces salgo del analisis
+				wcout << "Tiempo de jugada: " << t_transcurrido << endl;
+				longjmp(env, 0);											//con la funcion longjmp
+			}
+		}
+	}
+	else
+	{
+		if (binc)		//si hay incremento
+		{
+			if (t_transcurrido > (btime / 40) + (binc * 0.5))      			//si se supero el tiempo maximo por jugada
+			{
+				salir = 1;													//entonces salgo del analisis
+				wcout << "Tiempo de jugada: " << t_transcurrido << endl;
+				longjmp(env, 0);											//con la funcion longjmp
+			}
+		}
+		else			//sin incremento
+		{
+			if (t_transcurrido > (btime / 40))           					//si se supero el tiempo maximo por jugada
+			{
+				salir = 1;													//entonces salgo del analisis
+				wcout << "Tiempo de jugada: " << t_transcurrido << endl;
+				longjmp(env, 0);											//con la funcion longjmp
+			}
+		}
 	}
 }
 

@@ -82,6 +82,8 @@ extern float cant_analisis,proftotal,profmedia;					//igual q estas q muestran e
 
 extern unsigned long long freq,t_inicio,t_fin;    //para el manejo del tiempo
 extern double timerFrequency, t_transcurrido;
+extern unsigned long long wtime, btime, winc, binc;
+extern bool reloj;
 
 extern BITBOARD peones_b,peones_n,caballos_b,caballos_n,alfiles_b,alfiles_n,torres_b,torres_n,damas_b,damas_n,rey_b,rey_n;
 extern BITBOARD piezas_b,piezas_n;					//es la OR de todos los bitboards de tipos de pizas blancas o negras respectivamente

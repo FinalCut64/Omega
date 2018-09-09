@@ -4,6 +4,10 @@
 #include "global.h"
 #include "tt.h"
 
+
+unsigned long long wtime, btime, winc, binc;
+bool reloj;
+
 void Uci()
 {
     std::string nombre = "Omega 1.0";
@@ -53,16 +57,16 @@ void Uci()
 					{
 						int encontrado = recibido.find_first_of(" ");       //busco los espacios que delimitan el final de cada jugada dentro del string recibido
 //						std::cout << encontrado << std::endl;
-						if (encontrado == -1)					//compruebo que existan todavia espacios dentro de recibido
+						if (encontrado == -1)						//compruebo que existan todavia espacios dentro de recibido
 						{
-							recibido.copy(alg,recibido.size(),0);
-							recibido.clear();					//si no se encuentra ninguno más borro el string recibido
+							recibido.copy(alg,recibido.size(),0);	//almaceno en alg la jugada (desde el caracter 0 de recibido hasta una longitud igual a encontrado)
+							recibido.clear();						//si no se encuentra ninguno más borro el string recibido
 
 						}
-						else									//entra aca si encuentra un nuevo espacio lo que significa que no hemos terminado de hacer las jugadas
+						else										//entra aca si encuentra un nuevo espacio lo que significa que no hemos terminado de hacer las jugadas
 						{
-							recibido.copy(alg,encontrado,0);	//almaceno en alg la jugada (desde el caracter 0 de recibido hasta una longitud igual a encontrado)
-							recibido.erase(0,encontrado + 1);	//elimino de recibido la jugada actual asi en la proxima pasada considero la siguiente
+							recibido.copy(alg,encontrado,0);		//almaceno en alg la jugada (desde el caracter 0 de recibido hasta una longitud igual a encontrado)
+							recibido.erase(0,encontrado + 1);		//elimino de recibido la jugada actual asi en la proxima pasada considero la siguiente
 						}
 						EsperaJugada(alg);					//llamo a la funcion pasandole alg que está en formato e2e4
 						bien = Legal();						//verifico legalidad
@@ -82,10 +86,57 @@ void Uci()
         }
         if(recibido.find("go") == 0)
         {
-			Analiza();
-			std::cout << "bestmove " << a << b << c << d << std::endl;
-			std::cout << "nodos " << nodos << std::endl;
-        }
+            recibido.erase(0,3);								//elimino del string recibido la palabra go y el espacio entre palabras (empiezo en el 0 y borro 3 caracteres)
+			if(recibido.find("wtime") == 0)						//si entra significa q se está jugando una partida entonces hay que conocer el estado de los relojes
+            {
+            	char w_time[10], b_time[10], w_inc[10], b_inc[10];
+                recibido.erase(0,6);							//elmino del string la palabra wtime y el espacio
+            	int encontrado = recibido.find_first_of(" ");	//busco la cant de caracteres que tiene wtime en milisegundos
+                recibido.copy(w_time,encontrado,0);				//almaceno en wtime el tiempo en miliseg que le queda a las blancas
+                recibido.erase(0,encontrado + 1);				//elmino del string la cant de milisegundos que wtime tiene
 
+   				recibido.erase(0,6);							//elmino del string la palabra btime y el espacio
+				encontrado = recibido.find_first_of(" ");		//busco la cant de caracteres que tiene btime en milisegundos
+                recibido.copy(b_time,encontrado,0);				//almaceno en btime el tiempo en miliseg que le queda a las negras
+                recibido.erase(0,encontrado + 1);				//elmino del string la cant de milisegundos que btime tiene
+
+   				recibido.erase(0,5);							//elmino del string la palabra winc y el espacio
+				encontrado = recibido.find_first_of(" ");		//busco la cant de caracteres que tiene winc en milisegundos
+                recibido.copy(w_inc,encontrado,0);				//almaceno en winc el tiempo en miliseg que hay de incremento por jugada para las blancas
+                recibido.erase(0,encontrado + 1);				//elmino del string la cant de caracteres q componen a winc
+
+   				recibido.erase(0,5);							//elmino del string la palabra binc y el espacio
+				encontrado = recibido.find_first_of(" ");		//busco la cant de caracteres que tiene binc en milisegundos
+                recibido.copy(b_inc,encontrado,0);				//almaceno en binc el tiempo en miliseg que hay de incremento por jugada para las negras
+                recibido.erase(0,encontrado + 1);				//elmino del string la cant de caracteres q componen a binc
+
+
+				std::string aux = w_time;
+				wtime = std::stoull(aux);						//convierte el string y lo guarda en wtime como unsigned long long
+				aux = b_time;
+				btime = std::stoull(aux);
+				aux = w_inc;
+				winc = std::stoull(aux);
+				aux = b_inc;
+				binc = std::stoull(aux);
+
+				if(turno_c == blancas)							//significa que se pide jugar con blancas
+				{
+					reloj = blancas;							//bandera para q la rutina de manejo de tiempo sepa q el tiempo q importa es el de las blancas
+				}
+				else
+				{
+					reloj = negras;
+				}
+
+                Analiza();
+                std::cout << "bestmove " << a << b << c << d << std::endl;
+				std::cout << "nodos " << nodos << std::endl;
+            }
+            else if(recibido.find("infinite") == 0)		//implementar analisis infinito
+			{
+
+			}
+        }
     };
 }

@@ -58,7 +58,7 @@
 	"bitboard.h"
 	"tt.h"
 
-1536203593 c:\users\user\desktop\demian\omega\global.h
+1536482906 c:\users\user\desktop\demian\omega\global.h
 	"definiciones.h"
 
 1535600916 c:\users\user\desktop\demian\omega\tt.h
@@ -70,7 +70,7 @@
 	"tt.h"
 	"bitboard.h"
 
-1536254792 source:c:\users\user\desktop\demian\omega\uci.cpp
+1536529731 source:c:\users\user\desktop\demian\omega\uci.cpp
 	<iostream>
 	<string>
 	"global.h"
