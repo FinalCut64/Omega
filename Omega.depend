@@ -1,0 +1,78 @@
+# depslib dependency file v1.0
+1535600916 source:c:\users\user\desktop\demián\omega\bitboard.cpp
+	"bitboard.h"
+
+1535600916 c:\users\user\desktop\demián\omega\bitboard.h
+	"definiciones.h"
+
+1535600916 c:\users\user\desktop\demián\omega\definiciones.h
+
+1536034425 source:c:\users\user\desktop\demián\omega\main.cpp
+	<iostream>
+	<string>
+	<windows.h>
+	<stdio.h>
+	<stdlib.h>
+	<setjmp.h>
+	<string.h>
+	"definiciones.h"
+	"global.h"
+	"bitboard.h"
+	"tt.h"
+
+1536034425 c:\users\user\desktop\demián\omega\global.h
+	"definiciones.h"
+
+1535600916 c:\users\user\desktop\demián\omega\tt.h
+	"definiciones.h"
+
+1535600916 source:c:\users\user\desktop\demián\omega\tt.cpp
+	<windows.h>
+	"global.h"
+	"tt.h"
+	"bitboard.h"
+
+1536034425 source:c:\users\user\desktop\demián\omega\uci.cpp
+	<iostream>
+	<string>
+	"global.h"
+
+1535600916 source:c:\users\user\desktop\demian\omega\bitboard.cpp
+	"bitboard.h"
+
+1535600916 c:\users\user\desktop\demian\omega\bitboard.h
+	"definiciones.h"
+
+1535600916 c:\users\user\desktop\demian\omega\definiciones.h
+
+1536346677 source:c:\users\user\desktop\demian\omega\main.cpp
+	<iostream>
+	<string>
+	<windows.h>
+	<stdio.h>
+	<stdlib.h>
+	<setjmp.h>
+	<string.h>
+	"definiciones.h"
+	"global.h"
+	"bitboard.h"
+	"tt.h"
+
+1536482906 c:\users\user\desktop\demian\omega\global.h
+	"definiciones.h"
+
+1535600916 c:\users\user\desktop\demian\omega\tt.h
+	"definiciones.h"
+
+1535600916 source:c:\users\user\desktop\demian\omega\tt.cpp
+	<windows.h>
+	"global.h"
+	"tt.h"
+	"bitboard.h"
+
+1536529731 source:c:\users\user\desktop\demian\omega\uci.cpp
+	<iostream>
+	<string>
+	"global.h"
+	"tt.h"
+

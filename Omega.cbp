@@ -32,7 +32,15 @@
 			<Add option="-Wall" />
 			<Add option="-fexceptions" />
 		</Compiler>
+		<Unit filename="bitboard.cpp" />
+		<Unit filename="bitboard.h" />
+		<Unit filename="definiciones.h" />
+		<Unit filename="global.h" />
 		<Unit filename="main.cpp" />
+		<Unit filename="movgen.h" />
+		<Unit filename="tt.cpp" />
+		<Unit filename="tt.h" />
+		<Unit filename="uci.cpp" />
 		<Extensions>
 			<code_completion />
 			<envvars />

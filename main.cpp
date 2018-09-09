@@ -1,132 +1,40 @@
 ///// CAMBIOS RESPECTO A LA VERSION ANTERIOR /////
 //
-//- Mejore QGenerarCapturas() y EvaluarMJ() eliminaando la parte de if( == 64) q era totalmente ineficiente e in�til
+//- Mejore QGenerarCapturas() y EvaluarMJ() eliminaando la parte de if( == 64) q era totalmente ineficiente e inútil
 
 
 #include <iostream>
+#include <string>
 #include <windows.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <setjmp.h>
 #include <string.h>
 
+#include "definiciones.h"
+#include "global.h"
+#include "bitboard.h"
+#include "tt.h"
+
+
+
 using namespace std;
 
-    /////////////////////////////////////////////////////////////////////////////
-    //                            DEFINICIONES DEL MOTOR
-    /////////////////////////////////////////////////////////////////////////////
 
-#define	PIC           1
-#define HUMANO        0
-
-#define INVALIDO      31000
-#define MATE					29999
-#define R             2
-#define MAXPROF       30
-
-#define Abs(a)                    (((a) > 0) ? (a) : -(a))
-#define Max(a,b)                  (((a) > (b)) ? (a) : (b))
-#define Min(a,b)                  (((a) < (b)) ? (a) : (b))
-#define Fila(x)                   ((x)>>3)						//entrando con x desde 0 a 63 devuelve en x el numero de fila q le corresponde
-#define Columna(x)				        ((x)&7)							//igual q el anterior devuelve el numero de columna q le corresponde
-#define DistanciaFilas(a,b)       Abs(Fila(a) - Fila(b))
-#define DistanciaColumnas(a,b)    Abs(Columna(a) - Columna(b))
-#define Distancia(a,b)            Max(DistanciaFilas(a,b), DistanciaColumnas(a,b))
-#define Flip(x)                   ((x)^1)
-#define SetMask(a)                (set_mask[a])
-#define ClearMask(a)              (clear_mask[a])
-#define SetMask90(a)              (set_mask90[a])
-#define ClearMask90(a)            (clear_mask90[a])
-#define SetMaskA1(a)              (set_maskA1[a])
-#define ClearMaskA1(a)            (clear_maskA1[a])
-#define SetMaskA8(a)              (set_maskA8[a])
-#define ClearMaskA8(a)            (clear_maskA8[a])
-#define POPCNT(a)                 __builtin_popcountll(a)
-#define ctz(a)                    (__builtin_ctzll(a))				//macro para implementar la instruccion clz directamente
-#define clz(a)                    (__builtin_clzll(a))
-
-//////////////////////////////////////////////////////////////////////////////
-//                          DEFINICIONES OPCIONALES                         //
-//////////////////////////////////////////////////////////////////////////////
 
 #define USAR_RELOJ
 
-#define USAR_NULO                   //comentar para desactivar caracteristicas o descomentar para implementarlas
-#define PODAR_INUTILIDAD
-//#define PODAR_INUTILIDAD_INVERSA
-#define USAR_TT
-//#define USAR_MULTICUT
-
-//definiciones para el generador de numeros aleatorios de 64 bits/////
-#define NN 312                                                      //
-#define MM 156                                                      //
-#define MATRIX_A 0xB5026F5AA96619E9ULL                              //
-#define UM 0xFFFFFFFF80000000ULL /* Most significant 33 bits */     //
-#define LM 0x7FFFFFFFULL /* Least significant 31 bits */            //
-//////////////////////////////////////////////////////////////////////
-
-typedef unsigned long long BITBOARD;	//llamo bitboard a los long long para q se haga mas facil de entender
-typedef unsigned char BYTE;
-typedef enum							//la casilla A1 corresponde al indice 0, H1 es 7, A8 es 56 y H8 es 63 y A1 corresponde al LSB de los 64 y H8 es el MSB
-{
-  A1, B1, C1, D1, E1, F1, G1, H1,
-  A2, B2, C2, D2, E2, F2, G2, H2,
-  A3, B3, C3, D3, E3, F3, G3, H3,
-  A4, B4, C4, D4, E4, F4, G4, H4,
-  A5, B5, C5, D5, E5, F5, G5, H5,
-  A6, B6, C6, D6, E6, F6, G6, H6,
-  A7, B7, C7, D7, E7, F7, G7, H7,
-  A8, B8, C8, D8, E8, F8, G8, H8,
-  MALA_CASILLA							//MALA CASILLA se produce en varias situaciones en las q inicio o fin valen 64
-}casillas;
-
-typedef enum
-{
-	fila1, fila2, fila3, fila4, fila5, fila6, fila7, fila8
-}filas;
-typedef enum
-{
-	columnaA, columnaB, columnaC, columnaD, columnaE, columnaF, columnaG, columnaH
-}columnas;
-typedef enum
-{
-	VACIA = 0, PEON = 1, CABALLO = 2, ALFIL = 3, TORRE = 4, DAMA = 5, REY = 6
-}piezas;
-typedef enum
-{
-	blancas = 1, negras = 0
-}color;
-typedef enum
-{
-	ilegal = 0, normal = 1, corona = 2, enroque = 3, ap = 4, doble = 5, movrey = 6, movtorre = 7
-}movidas;
-typedef enum
-{
-	TABLAS = 1, BLANCASGANAN = 2, NEGRASGANAN = 3
-}resultados;
-
-typedef enum
-{
-    Peon_b = 0, Caballo_b = 1, Alfil_b = 2, Torre_b = 3, Dama_b = 4, Rey_b = 5,
-    Peon_n = 6, Caballo_n = 7, Alfil_n = 8, Torre_n = 9, Dama_n = 10, Rey_n = 11,
-}trebejos;
 
     /////////////////////////////////////////////////////////////////////////////
     //                            FUNCIONES LOCALES
     /////////////////////////////////////////////////////////////////////////////
 
-void Opciones();
-void EnviarJugada();
-void InicializaRegistros();		//inicia los registros a su estado por defecto
-void ReiniciaRegistros();		//antes de cada nueva partida hay q reiniciar varios registros
+void Uci();
+void IniciaVar();
+void InicializaRegistros();		            //inicia los registros a su estado por defecto
+void ReiniciaRegistros();		            //antes de cada nueva partida hay q reiniciar varios registros
 void LeeFEN();								//prepara todos los registros necesarios para q comience la partida (nueva o con introduccion de FEN)
-void EsperaJugada();						//retorna cuando el user jugo algo y obtiene la jugada del user traducida al formato q entiende el programa
-BYTE MSB(BITBOARD);							//devuelve la posicion del bit mas significativo q es uno dentro de la BITBOARD
-BYTE LSB(BITBOARD);							//devuelve la posicion del bit menos significativo q es uno dentro de la BITBOARD
-BITBOARD FlipVertical(BITBOARD);            //hace que la fila 1 pase a la 8, la 2 a la 7, etc.
-BITBOARD FlipDiagA8H1(BITBOARD);            //voltea la bitboard a lo largo del eje de la diagonal A8-H1
-BITBOARD Rotar90clockwise (BITBOARD);       //rota la bitboard 90 grados en sentido horario
-BITBOARD Rotar90antiClockwise (BITBOARD);   //rota la bitboard 90� en sentido antihorario
+void EsperaJugada(char[4]);					//retorna cuando el user jugo algo y obtiene la jugada del user traducida al formato q entiende el programa
 void InicializaMasks();						//inicializa las mascaras de columnas, filas set y clear
 void IniciaBitboards();						//inicializa las bitboards ataques_peon,ataques_caballo,alpaso,etc
 void IniciaRPr();                           //genera la tabla q contiene los valores para todas las posiciones del final RP vs r
@@ -176,7 +84,6 @@ BYTE TresRepet();							//permite determinar si la partida debe acabar por regla
 BYTE Libro();                               //el libro de aperturas propio del modulo
 void Anotar();                              //registra la partida en curso a medida que se realizan las jugadas
 void ExportarPartida();
-void MostrarEstadisticas();
 void ManejarReloj();
 
 void QuickSort(int a[],int,int, BYTE);
@@ -196,45 +103,15 @@ void QDescapturaBlancas(BYTE,BYTE);
 void QDescapturaNegras(BYTE,BYTE);
 void QQuickSort(int a[],int,int, BYTE);
 
-//declaracion de funciones del generador de numeros aleatorios////
-void init_genrand64(unsigned long long);                        //
-void InicializaAleatorio(void);                                 //
-unsigned long long GeneraAleatorio(void);                       //
-//////////////////////////////////////////////////////////////////
 
-void InicializaZobrist();           //inicia con numeros aleatorios las llaves Zobrist usadas en la tabla de transposicion
-void InicializaHash();              //dada una posicion en el tablero obtiene la clave hash que le corresponde
-int Setsize_tt(int);
-void Save_tt(unsigned char,int,char,int);
-int Probar_tt(BYTE,int,int);
 
-int Setsize_hojastt(int);           //dimensiona la hojastt
-int Probar_hojastt(int,int);        //verifica si se produce un hit en hojastt lo que corta todo Quies()
-void Save_hojastt(int,int,int);     //guarda en la tt la posicion y valoracion de la hoja actual
 
-int Setsize_evaltt(int);            //selecciona el tama�o de la tt de evaluacion
-int Probar_evaltt();                //verifica si se produce un hit en evaltt lo que evita gastar tiempo en Evaluar()
-void Save_evaltt(int);              //guarda en evaltt el valor q devuelve Evaluar() para la posicion actual
 
-int Setsize_perfttt(int);           //selecciona el tama�o de la tt de Perft()
-BITBOARD Probar_perfttt(BYTE);      //verifica si se produce un hit en perfttt (de ser asi devuelve el nro de nodos hojas)
-void Save_perfttt(BITBOARD,BYTE);   //guarda en perfttt la cantidad de nodos hoja q se desprenden del nodo actual
-/////////////////////////////////////////////////////////////////////////////
-//                         VARIABLES GLOBALES
-/////////////////////////////////////////////////////////////////////////////
+jmp_buf env;								//esta es para la funcion longjump q permite salir de negamax rapido
 
-HANDLE pipe;
-BOOL result;
+///////////////////Variables globales/////////////////////////////////
 
-//estos son para el generador de numeros aleatorios/////////////////////////////
-// The array for the state vector                                             //
-static unsigned long long mt[NN];                                             //
-// mti==NN+1 means mt[NN] is not initialized                                  //
-static int mti=NN+1;                                                          //
-////////////////////////////////////////////////////////////////////////////////
-
-int segunda,test,cantpartidas;          //registros para la comunicacion con Beta
-BYTE nueva,testeando,resultado;
+BYTE nueva,resultado;
 BYTE turno,turno_c,colorpic,bien,semibien,inicio,fin,pieza;
 BYTE prof_max,jugadas[MAXPROF][600],Qcapturas[40][80],Qcorona[40];
 BYTE comio[MAXPROF],alpaso[MAXPROF],derechos_enroque[MAXPROF],vp[MAXPROF][3];
@@ -246,8 +123,6 @@ char planilla[7][400];                      //permite anotar una partida de hast
 unsigned int ply_count;
 BYTE mcut;                                  //indica si se esta haciendo o no una busqueda multi cut
 
-jmp_buf env;								//esta es para la funcion longjump q permite salir de negamax rapido
-
 char a,b,c,d,e;								//para cuando el user corona ver q fue
 int ponderacion[200],Qponderacion[40];		//para el ordenamiento de jugadas con el enfoque MVV/LVA
 unsigned int puntero,ultimajugada[MAXPROF],Qpuntero,ultimacaptura[40],total_jugadas;
@@ -256,10 +131,9 @@ int valoracion,val,estimo,total;
 int killer[MAXPROF][2];
 unsigned long long divide[600]; //para la funcion divide dentro del perft() q permite detectar errores en el generador de movs
 unsigned long long saliointerrumpido,salionormal;	//estas son para ver estadisticas
-unsigned long long nodos = 0,Qnodos = 0,nodosnulos = 0,cortesnulo = 0,llamadasevaluar = 0,cortes_inut_inversa;
+unsigned long long nodos,Qnodos,nodosnulos,cortesnulo,llamadasevaluar,cortes_inut_inversa;
 unsigned long long cantventanas,falloventana,eficiencia_1,eficiencia_2,eficiencia,qpasaaca;
 float cant_analisis,proftotal,profmedia;					//igual q estas q muestran el nivel de juego promedio de la partida
-float motorviejo=0,motornuevo=0,empates=0;
 
 unsigned long long freq,t_inicio,t_fin;    //para el manejo del tiempo
 double timerFrequency, t_transcurrido;
@@ -281,8 +155,8 @@ BITBOARD set_mask[65];						//permite poner a 1 el bit q se quiera
 BITBOARD clear_mask90[64];                  //para las bitboards rotadas
 BITBOARD set_mask90[64];
 BITBOARD clear_maskA1[64];
-BITBOARD set_maskA1[64] =                   //soy un manco y no pude escribir una funcion para representar esta serie
-{                                           //por eso lo inicializo asi y no en InicializaMasks()
+BITBOARD set_maskA1[64] =                                  //soy un manco y no pude escribir una funcion para representar esta serie
+{                                             //por eso lo inicializo asi y no en InicializaMasks()
     0x10000000,0x200000,0x8000,0x400,0x40,0x8,0x2,0x1,
     0x1000000000,0x20000000,0x400000,0x10000,0x800,0x80,0x10,0x4,
     0x80000000000,0x2000000000,0x40000000,0x800000,0x20000,0x1000,0x100,0x20,
@@ -306,13 +180,13 @@ BITBOARD set_maskA8[64] =
 };
 BITBOARD fila_mask[8];
 BITBOARD columna_mask[8];
-BITBOARD mask_efgh = 0xf0f0f0f0f0f0f0f0;
-BITBOARD mask_fgh = 0xe0e0e0e0e0e0e0e0;
-BITBOARD mask_abc = 0x0707070707070707;
-BITBOARD mask_abcd = 0x0f0f0f0f0f0f0f0f;
-BITBOARD mask_ah = 0x8181818181818181;
-BITBOARD casillas_b = 0x55aa55aa55aa55aa;
-BITBOARD casillas_n = 0xaa55aa55aa55aa55;
+BITBOARD mask_efgh;
+BITBOARD mask_fgh;
+BITBOARD mask_abc;
+BITBOARD mask_abcd;
+BITBOARD mask_ah;
+BITBOARD casillas_b;
+BITBOARD casillas_n;
 BITBOARD mas1dir[65];                       //direccion una casilla a la derecha
 BITBOARD mas7dir[65];                       //diagonal hacia arriba izquierda
 BITBOARD mas8dir[65];                       //vertical hacia arriba
@@ -326,13 +200,13 @@ BITBOARD peon_aislado[64];
 BITBOARD peon_pasado[2][64];
 BITBOARD dospasos[2][8];
 BITBOARD regladelcuadrado[2][2][64];
-BITBOARD OO[2] = {0x6000000000000000, 0x0000000000000060};
-BITBOARD OOO[2] = {0x0E00000000000000, 0x000000000000000E};
+BITBOARD OO[2];
+BITBOARD OOO[2];
 BITBOARD ataques_filas[64][256],ataques_columnas[64][256],ataques_A1H8[64][256],ataques_A8H1[64][256];
 
 unsigned int historia[2][64][64];   //para implementar ordenamiento por historia de la jugada [turno][inicio][fin]
 BYTE RPr[2][64][64][64];            //turno a quien le toca, casilla del peon, del rey blanco y del negro (contiene todas las pos)
-                                    //del final RP vs r con valores 0 si es tablas 1 si es victoria blanca
+                                           //del final RP vs r con valores 0 si es tablas 1 si es victoria blanca
 
 //estas son para guardar y recuperar el estado de la partida por si hay q salir prematuramente de negamax/////////////////////////////////////////////////////////
 BYTE turno1,comio1,jugadas_reversibles1;																														//
@@ -343,306 +217,34 @@ BITBOARD piezas_anteriores[MAXPROF][12];																																//
 BYTE turnos_anteriores[MAXPROF],enroques_anteriores[MAXPROF],alpaso_anteriores[MAXPROF];																						//
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-const int mate[64] =						//para facilitar los mates en general
-{
-  200, 180, 160, 140, 140, 160, 180, 200,
-  180, 160, 140, 120, 120, 140, 160, 180,
-  160, 140, 120, 100, 100, 120, 140, 160,
-  140, 120, 100, 100, 100, 100, 120, 140,
-  140, 120, 100, 100, 100, 100, 120, 140,
-  160, 140, 120, 100, 100, 120, 140, 160,
-  180, 160, 140, 120, 120, 140, 160, 180,
-  200, 180, 160, 140, 140, 160, 180, 200
-};
-const int rey_final[64] =					//para la posicion del rey en los finales
-{
-  -20, -9, -8, -7, -7, -8, -9, -20,
-   -9, -8, -7, -6, -6, -7, -8, -9,
-   -8, -7, -6, -5, -5, -6, -7, -8,
-   -7, -6, -5, -4, -4, -5, -6, -7,
-   -7, -6, -5, -4, -4, -5, -6, -7,
-   -8, -7, -6, -5, -5, -6, -7, -8,
-   -9, -8, -7, -6, -6, -7, -8, -9,
-  -20, -9, -8, -7, -7, -8, -9, -20
-};
-const int mate_ac_n[64] =					//para facilitar el mate de alfil de casillas negras y caballo
-{
-  99, 90, 80, 70, 60, 50, 40, 30,
-  90, 80, 70, 60, 50, 40, 30, 40,
-  80, 70, 60, 50, 40, 30, 40, 50,
-  70, 60, 50, 40, 30, 40, 50, 60,
-  60, 50, 40, 30, 40, 50, 60, 70,
-  50, 40, 30, 40, 50, 60, 70, 80,
-  40, 30, 40, 50, 60, 70, 80, 90,
-  30, 40, 50, 60, 70, 80, 90, 99
-};
-const int mate_ac_b[64] =					//para facilitar el mate de alfil de casillas blancas y caballo
-{
-  30, 40, 50, 60, 70, 80, 90, 99,
-  40, 30, 40, 50, 60, 70, 80, 90,
-  50, 40, 30, 40, 50, 60, 70, 80,
-  60, 50, 40, 30, 40, 50, 60, 70,
-  70, 60, 50, 40, 30, 40, 50, 60,
-  80, 70, 60, 50, 40, 30, 40, 50,
-  90, 80, 70, 60, 50, 40, 30, 40,
-  99, 90, 80, 70, 60, 50, 40, 30
-};
-const int caballo_outpost[2][64] =
-{
-  { 0, 0, 0, 0, 0, 0, 0, 0,
-    0, 0, 0, 0, 0, 0, 0, 0,
-    0, 1, 4, 4, 4, 4, 1, 0,
-    0, 2, 6, 8, 8, 6, 2, 0,
-    0, 1, 4, 4, 4, 4, 1, 0,   // [negro][64]
-    0, 0, 0, 0, 0, 0, 0, 0,
-    0, 0, 0, 0, 0, 0, 0, 0,
-    0, 0, 0, 0, 0, 0, 0, 0 },
 
-  { 0, 0, 0, 0, 0, 0, 0, 0,
-    0, 0, 0, 0, 0, 0, 0, 0,
-    0, 0, 0, 0, 0, 0, 0, 0,
-    0, 1, 4, 4, 4, 4, 1, 0,
-    0, 2, 6, 8, 8, 6, 2, 0,   // [blanco][64]
-    0, 1, 4, 4, 4, 4, 1, 0,
-    0, 0, 0, 0, 0, 0, 0, 0,
-    0, 0, 0, 0, 0, 0, 0, 0 }
-};
-const int alfil_outpost[2][64] =
-{
-  { 0, 0, 0, 0, 0, 0, 0, 0,
-   -1, 0, 0, 0, 0, 0, 0,-1,
-    0, 0, 1, 1, 1, 1, 0, 0,
-    0, 1, 3, 3, 3, 3, 1, 0,
-    0, 3, 5, 5, 5, 5, 3, 0,   // [negro][64]
-    0, 1, 2, 2, 2, 2, 1, 0,
-    0, 0, 0, 0, 0, 0, 0, 0,
-    0, 0, 0, 0, 0, 0, 0, 0 },
-
-  { 0, 0, 0, 0, 0, 0, 0, 0,
-    0, 0, 0, 0, 0, 0, 0, 0,
-    0, 1, 2, 2, 2, 2, 1, 0,
-    0, 3, 5, 5, 5, 5, 3, 0,
-    0, 1, 3, 3, 3, 3, 1, 0,   // [blanco][64]
-    0, 0, 1, 1, 1, 1, 0, 0,
-   -1, 0, 0, 0, 0, 0, 0,-1,
-    0, 0, 0, 0, 0, 0, 0, 0 }
-};
-const int peon_pos[2][64] =
-{
-    {966, 966, 966, 966, 966, 966, 966, 966,
-      66,  66,  66,  66,  66,  66,  66,  66,
-      10,  10,  10,  30,  30,  10,  10,  10,
-       6,   6,   6,  16,  16,   6,   6,   6,
-       3,   4,   5,  13,  13,   5,   4,   3,   /* [negras][64] */
-       1,   2,   3,  10,  10,   3,   2,   1,
-       0,   1,   2, -12, -12,   2,   1,   0,
-       0,   0,   0,   0,   0,   0,   0,   0 },
-
-    {  0,   0,   0,   0,   0,   0,   0,   0,
-       0,   1,   2, -12, -12,   2,   1,   0,
-       1,   2,   3,  10,  10,   3,   2,   1,
-       3,   4,   5,  13,  13,   5,   4,   3,
-       6,   6,   6,  16,  16,   6,   6,   6,   /* [blancas][64] */
-      10,  10,  10,  30,  30,  10,  10,  10,
-      66,  66,  66,  66,  66,  66,  66,  66,
-     966, 966, 966, 966, 966, 966, 966, 966 }
-};
-const int caballo_pos[2][64] =
-{
-   {-29, -19, -19,  -9,  -9, -19, -19, -29,
-      1,  12,  18,  22,  22,  18,  12,   1,
-      1,  14,  23,  27,  27,  23,  14,   1,
-      1,  14,  23,  28,  28,  23,  14,   1,
-      1,  12,  21,  24,  24,  21,  12,   1,  /* [negras][64] */
-      1,   2,  19,  17,  17,  19,   2,   1,
-      1,   2,   2,   2,   2,   2,   2,   1,
-    -19, -19, -19, -19, -19, -19, -19, -19 },
-
-   {-19, -19, -19, -19, -19, -19, -19, -19,
-      1,   2,   2,   2,   2,   2,   2,   1,
-      1,   2,  19,  17,  17,  19,   2,   1,
-      1,  12,  21,  24,  24,  21,  12,   1,
-      1,  14,  23,  28,  28,  23,  14,   1,  /* [blancas][64] */
-      1,  14,  23,  27,  27,  23,  14,   1,
-      1,  12,  18,  22,  22,  18,  12,   1,
-    -29, -19, -19,  -9,  -9, -19, -19, -29 }
-};
-const int alfil_pos[2][64] =
-{
-   {  0,   0,   2,   4,   4,   2,   0,   0,
-      0,   8,   6,   8,   8,   6,   8,   0,
-      2,   6,  12,  10,  10,  12,   6,   2,
-      4,   8,  10,  16,  16,  10,   8,   4,
-      4,   8,  10,  16,  16,  10,   8,   4,   /* [negras][64] */
-      2,   6,  12,  10,  10,  12,   6,   2,
-      0,   8,   6,   8,   8,   6,   8,   0,
-    -10, -10,  -8,  -6,  -6,  -8, -10, -10 },
-
-   {-10, -10,  -8,  -6,  -6,  -8, -10, -10,
-      0,   8,   6,   8,   8,   6,   8,   0,
-      2,   6,  12,  10,  10,  12,   6,   2,
-      4,   8,  10,  16,  16,  10,   8,   4,
-      4,   8,  10,  16,  16,  10,   8,   4,   /* [blancas][64] */
-      2,   6,  12,  10,  10,  12,   6,   2,
-      0,   8,   6,   8,   8,   6,   8,   0,
-      0,   0,   2,   4,   4,   2,   0,   0 }
-};
-const int torre_pos[2][64] =
-{
-  	{ 0,   0,   0,   0,   0,   0,   0,   0,
-  	 10,  10,  10,  10,  10,  10,  10,  10,
- 	 -5,   0,   0,   0,   0,   0,   0,  -5,
- 	 -5,   0,   0,   0,   0,   0,   0,  -5,		//negras
- 	 -5,   0,   0,   0,   0,   0,   0,  -5,
- 	 -5,   0,   0,   0,   0,   0,   0,  -5,
- 	 -5,   0,   0,   0,   0,   0,   0,  -5,
- 	  0,   0,   0,   5,   5,   0,   0,   0 },
-
-  	{ 0,   0,   0,   5,   5,   0,   0,   0,
-  	 -5,   0,   0,   0,   0,   0,   0,  -5,
- 	 -5,   0,   0,   0,   0,   0,   0,  -5,
- 	 -5,   0,   0,   0,   0,   0,   0,  -5,		//blancas
- 	 -5,   0,   0,   0,   0,   0,   0,  -5,
- 	 -5,   0,   0,   0,   0,   0,   0,  -5,
- 	 10,  10,  10,  10,  10,  10,  10,  10,
- 	  0,   0,   0,   0,   0,   0,   0,   0 },
-
-};
-const int dama_pos[64] =
-{
-      0,   0,   0,   0,   0,   0,   0,   0,
-      0,   0,   4,   4,   4,   4,   0,   0,
-      0,   4,   4,   6,   6,   4,   4,   0,
-      0,   4,   6,   8,   8,   6,   4,   0,
-      0,   4,   6,   8,   8,   6,   4,   0,   /* blancas y negras[64] (es simetrico) */
-      0,   4,   4,   6,   6,   4,   4,   0,
-      0,   0,   4,   4,   4,   4,   0,   0,
-      0,   0,   0,   0,   0,   0,   0,   0
-};
-const int rey_pos[2][64] =
-{
-   {-30, -40, -40, -50, -50, -40, -40, -30,
-	-30, -40, -40, -50, -50, -40, -40, -30,
-	-30, -40, -40, -50, -50, -40, -40, -30,
-	-30, -40, -40, -50, -50, -40, -40, -30,		//negras
-	-20, -30, -30, -40, -40, -30, -30, -20,
-	-10, -20, -20, -20, -20, -20, -20, -10,
-	 20,  20,   0,   0,   0,   0,  20,  20,
-	 20,  30,  10,   0,   0,  10,  30,  20 },
-
-    {20,  30,  10,   0,   0,  10,  30,  20,
-	 20,  20,   0,   0,   0,   0,  20,  20,
-	-10, -20, -20, -20, -20, -20, -20, -10,
-	-20, -30, -30, -40, -40, -30, -30, -20,		//blancas
-	-30, -40, -40, -50, -50, -40, -40, -30,
-	-30, -40, -40, -50, -50, -40, -40, -30,
-	-30, -40, -40, -50, -50, -40, -40, -30,
-	-30, -40, -40, -50, -50, -40, -40, -30,	}
-};
-
-//aca comienza todo lo relacionado con la tabla de transposicion (tt)
-struct sZob                             //le meto la s adelante para saber que este es el tipo structura
-{
-    BITBOARD escaques[12][64];          //todas las combinaciones de piezas y casillas
-    BITBOARD bando;                     //un numero para el bando q le toca mover
-    BITBOARD enroques[16];              //16 numeros para los derechos de enrroques
-    BITBOARD alpaso[9];                 //no confundir con alpaso del motor ya q soy registros distintos y no entran en conflicto
-}Zobrist;                               //y este es el nombre de esta estructura del tipo sZob
-
-BITBOARD hash_pos;                      //la llave zobrist con el valor hash de la posicion
-BITBOARD hash_pos2;                     //esta es para guardarlo y recuperarlo al salir interrumpido por tiempo de Analiza()
-BITBOARD tt_hits;                       //contador de hits de la tabla
-int tt_size,mejor_jugada,tt_mejor;
-BYTE tt_hit;
-
-struct stt
-{
-    BITBOARD confirma;      //tiene la hash para saber si corresponde
-    short int val;          //valor obtenido de la posicion
-    short int mejorjugada;  //la mejor jugada q se encontro para esta posicion
-    BYTE prof;              //profundidad a la que se analizo el nodo
-    BYTE bandera;           //bandera q indica tipo de nodo (nodo alfa, beta o pv)
-    BYTE edad;
-} * tt;
-
-enum banderas_tt
-{
-    TT_EXACTO,
-    TT_ALFA,
-    TT_BETA
-};
-
-//fin de la tt
-//comienzo de la hojastt y la evaltt
-
-int hojastt_size,evaltt_size;               //tama�o de la tabla de nodos hojas y la de evaluaciones
-BITBOARD hojastt_hits,evaltt_hits;          //contador de hits de la tabla de hojas y de evaluaciones
-
-struct shojastt
-{
-    BITBOARD confirma;
-    int val;
-    int alfa;
-    int beta;
-    BITBOARD inutil;
-} * hojastt;
-
-struct sevaltt
-{
-    BITBOARD confirma;
-    int val;
-} * evaltt;
-
-struct sperfttt
-{
-    BITBOARD confirma;
-    BITBOARD nodos;
-    BYTE prof;
-    int relleno;
-    int relleno2;
-} * perfttt;
-
-int perfttt_size;
-BITBOARD perfttt_hits;
-
-BITBOARD mejortt = 0;
 /////////////////////////////////////////////////////////////////////////////
 //                                  MAIN								   //
 /////////////////////////////////////////////////////////////////////////////
 
 int main(void)
 {
-    InicializaAleatorio();      //deja lista la funcion de generacion de numeros aleatorios necesarias para
-    InicializaZobrist();        //llenar las claves Zobrist
-    Setsize_tt(1048576);        //creo que es 1 MB
-    Setsize_hojastt(1048576);
-    Setsize_evaltt(1048576);
-//    Setsize_perfttt(1048576);
-    QueryPerformanceFrequency((LARGE_INTEGER*)&freq);   //toma la performance de la compu para tener de base en el reloj
-    timerFrequency = (1.0/freq);                        //saca la frecuencia de la cpu como base para el reloj
+    QueryPerformanceCounter((LARGE_INTEGER *)&t_inicio);
+    Uci();
 
-    Opciones();     //permite elegir el modo de juego (humano vs quasar, o conexion entre modulos a travez de named pipe)
-	InicializaMasks();			//inicializa las mascaras usadas para trabajar con bits a lo largo de todo el programa
-	IniciaBitboards();
-	IniciaRPr();
-	InicializaRegistros();		//en cada reinicio del programa hay q iniciar varias variables para q todo ande bien
 	while (1)
 	{
+/*
         LeeFEN();
-        InicializaHash();       //una vez configurada la posici�n se establece la clave hash de la misma
+        InicializaHash();       //una vez configurada la posición se establece la clave hash de la misma
 		ReiniciaRegistros();	//al comenzar una nueva partida hay q reiniciar varios registros para q todo funcione bien (esto inicia la partida)
 //        valoracion = Evaluar();
         QueryPerformanceCounter((LARGE_INTEGER *)&t_inicio);
+*/
 		do						//aca va a estar todo el programa y se va a volver cada vez que se complete un movimiento satisfactorio del humano o del pic
 		{
 			if (turno == 0)//HUMANO)	//entra si le toca jugar al jugador humano
 			{
 				do					//punto de regreso al detectarse un error dado por la funcion legal() en la jugada enviada por el usuario
 				{
-					EsperaJugada();		//retorna cuando el user jugo algo y obtiene la jugada del user traducida al formato q entiende el programa
+//					EsperaJugada();		//retorna cuando el user jugo algo y obtiene la jugada del user traducida al formato q entiende el programa
 					bien = Legal();		//se fija si la jugada es totalmente correcta en terminos legales (FALSE si es ilegal y TRUE si es legal)
 				}while(bien == 0);		//mientras legal retorne falso (osea movimiento ilegal) o no caiga la aguja no salgo
-                segunda = 0;            //reinicio para la proxima jugada
 			}//fin del turno del humano
 			else							//le toca el turno al PIC
 			{
@@ -652,8 +254,6 @@ int main(void)
                     wcout << "profundidad " << prof_max - 1 << endl;
                 else
                     wcout << "profundidad " << prof_max << endl;
-				if (testeando)              //si quiero q el programa juegue contra una version mas nueva estoy testeando
-                    EnviarJugada();         //se encarga de pasarle a travez de la named pipe la jugada al otro motor
 			}//fin del turno del pic
 			//a partir de aca la jugada se hace si o si
 			Jugar(inicio,fin,bien);						//actualiza los regs necesarios para q la jugada se realice (muy similar a HacerJugada pero no igual)
@@ -665,7 +265,6 @@ int main(void)
 		t_transcurrido = ((t_fin - t_inicio) * timerFrequency);
 		wcout << t_transcurrido << endl;
 		ExportarPartida();                              //que saque la partida con el formato del fritz
-        MostrarEstadisticas();
 	};//end while de todo el programa (del q no se sale nunca)
 }
 
@@ -673,110 +272,47 @@ int main(void)
 ////////////////////////////////FIN DEL MAIN/////////////////////////////////
 /////////////////////////////////////////////////////////////////////////////
 
-void Opciones()
+void Init()
 {
-    char t;
+    IniciaVar();
+    InicializaAleatorio();      //deja lista la funcion de generacion de numeros aleatorios necesarias para
+    InicializaZobrist();        //llenar las claves Zobrist
+    Setsize_tt(1048576);        //creo que es 1 MB
+    Setsize_hojastt(1048576);
+    Setsize_evaltt(1048576);
+//    Setsize_perfttt(1048576);
+    QueryPerformanceFrequency((LARGE_INTEGER*)&freq);   //toma la performance de la compu para tener de base en el reloj
+    timerFrequency = (1.0/freq);                        //saca la frecuencia de la cpu como base para el reloj
 
-    printf("Jugar contra la maquina?"); //permite elegir entre humano vs maquina o quasar contra quasar beta
-	scanf(" %c",&t);
-	if (t == 'y')
-		testeando = 0;
-	else
-    {
-		testeando = 1;                  //si se quiere testear contra el otro programa entonces se crea la named pipe
-        wcout << "Creating an instance of a named pipe..." << endl;
-
-        // Create a pipe to send data
-        pipe = CreateNamedPipe
-        (
-            "\\\\.\\pipe\\my_pipe", // name of the pipe
-            PIPE_ACCESS_DUPLEX, // 2-way pipe
-            PIPE_TYPE_BYTE, // send data as a byte stream
-            1, // only allow 1 instance of this pipe
-            0, // no outbound buffer
-            0, // no inbound buffer
-            0, // use default wait time
-            NULL // use default security attributes
-        );
-
-        if (pipe == NULL || pipe == INVALID_HANDLE_VALUE)
-        {
-            wcout << "Failed to create outbound pipe instance.";
-            // look up error code here using GetLastError()
-            system("pause");
-        }
-
-        wcout << "Waiting for a client to connect to the pipe..." << endl;
-
-        // This call blocks until a client process connects to the pipe
-        result = ConnectNamedPipe(pipe, NULL);
-        if (!result)
-        {
-            wcout << "Failed to make connection on named pipe." << endl;
-            // look up error code here using GetLastError()
-            CloseHandle(pipe); // close the pipe
-            system("pause");
-        }
-
-        wcout << "Conexion establecida" << endl;
-    }
+	InicializaMasks();			//inicializa las mascaras usadas para trabajar con bits a lo largo de todo el programa
+	IniciaBitboards();
+	IniciaRPr();
+	InicializaRegistros();		//en cada reinicio del programa hay q iniciar varias variables para q todo ande bien
 }
 
-void EnviarJugada()
+void IniciaVar()
 {
-    wchar_t enviar[4];
+    nodos = 0;
+    Qnodos = 0;
+    nodosnulos = 0;
+    cortesnulo = 0;
+    llamadasevaluar = 0;
+    cortes_inut_inversa = 0;
 
-    enviar[0] = a;
-    enviar[1] = b;
-    enviar[2] = c;
-    enviar[3] = d;
-    const wchar_t *data = enviar;
-    DWORD numBytesWritten = 0;
-    result = WriteFile
-    (
-        pipe, // handle to our outbound pipe
-        data, // data to send
-        4 * sizeof(wchar_t), // length of data to send (bytes)
-        &numBytesWritten, // will store actual amount of data sent
-        NULL // not using overlapped IO
-    );
-    if (!result)
-    {
-        wcout << "Failed to send data." << endl;
-        system("pause");
-    }
-}
+    mask_efgh = 0xf0f0f0f0f0f0f0f0;
+    mask_fgh = 0xe0e0e0e0e0e0e0e0;
+    mask_abc = 0x0707070707070707;
+    mask_abcd = 0x0f0f0f0f0f0f0f0f;
+    mask_ah = 0x8181818181818181;
+    casillas_b = 0x55aa55aa55aa55aa;
+    casillas_n = 0xaa55aa55aa55aa55;
 
-void MostrarEstadisticas()
-{
-    if (test)                                       //si estamos en match entre modulos
-    {
-        if (cantpartidas == 19)     //si esta es la ultima partida del test
-        {
-            test = 0;               //bajo la bandera para q la proxima vez q entre en LeeFen sepa q acabo y pregunte
-            cantpartidas = 0;       //reinicio el contador tambien
-        }
-        if (resultado == TABLAS)
-        {
-            empates++;
-            wcout << "Resultado: 1/2 - 1/2" << endl;
-        }
-        else
-        {
-            if (((resultado == BLANCASGANAN) && (colorpic == blancas))||((resultado == NEGRASGANAN) && (colorpic == negras)))
-            {
-                motorviejo++;
-                wcout << "Resultado: 1 - 0" << endl;        //1-0 significa q gano el motor viejo no q ganaron blancas
-            }
-            else
-            {
-                motornuevo++;
-                wcout << "Resultado: 0 - 1" << endl;        //0-1 significa q gano el motor nuevo no q ganaron negras
-            }
-        }
-        wcout << "+ " << motorviejo << " = " << empates << " - " << motornuevo << endl;
-        wcout << motorviejo + (empates/2) << "/" << (empates/2) + motornuevo << endl;
-    }
+    OO[0] = 0x6000000000000000;            //extern BITBOARD OO[2] = {0x6000000000000000, 0x0000000000000060};
+    OO[1] = 0x0000000000000060;
+    OOO[0] = 0x0E00000000000000;           //extern BITBOARD OOO[2] = {0x0E00000000000000, 0x000000000000000E};
+    OOO[1] = 0x000000000000000E;
+
+    mejortt = 0;
 }
 
 void InicializaRegistros()						//inicializa todos los registros a su valor por defecto
@@ -805,40 +341,14 @@ void ReiniciaRegistros()
 	total_jugadas = 0;							//van 0 jugadas
 	jugadas_reversibles = 0;
 
-    if (!test)                                  //si no estamos testeando una bateria de posiciones damos la posibilidad de
-    {                                           //elegir color
-        printf("Seleccionar color: b,n ");
-        scanf(" %c",&m);
-        if (m == 'b')
-            colorpic = negras;
-        else
-            colorpic = blancas;
-    }
-	if(testeando)                               //si estamos en comunicacion con el otro modulo
-    {
-        wchar_t s[1];
-        if (test)                               //si estamos haciendo match ya tenemos el color de piezas correspondiente
-        {
-            if (colorpic == blancas)
-                s[0] = 'b';
-            else
-                s[0] = 'n';
-        }
-        else                                    //si es una unica partida entonces hay q respetar la eleccion del usuario
-            s[0] = m;
-        const wchar_t *data = s;
-        DWORD numBytesWritten = 0;
-        result = WriteFile                      //le indicamos con q color debe jugar
-        (
-            pipe, // handle to our outbound pipe
-            data, // data to send
-            1 * sizeof(wchar_t), // length of data to send (bytes)
-            &numBytesWritten, // will store actual amount of data sent
-            NULL // not using overlapped IO
-        );
-        if (!result)
-            wcout << "Failed to send data." << endl;
-    }
+//    printf("Seleccionar color: b,n ");
+//    scanf(" %c",&m);
+//    if (m == 'b')
+//    if(condicion que indique el color al q le toca jugar)
+        colorpic = negras;
+//    else
+//        colorpic = blancas;
+/*
     if (colorpic == blancas)
     {
         if (turno_c == blancas)
@@ -853,399 +363,22 @@ void ReiniciaRegistros()
         else
             turno = HUMANO;
     }
-    for (i=0;i<2;i++)       //por ultimo reinicio los registros de la historia de la partida
+*/
+    turno = PIC;
+    for (i=0; i<2; i++)     //por ultimo reinicio los registros de la historia de la partida
     {
-    for (j=0;j<64;j++)
-    {
-    for (k=0;k<64;k++)
-    {
-        historia[i][j][k] = 0;
-    }
-    }
-    }
-}
-
-
-void init_genrand64(unsigned long long seed)    // inicializa mt[NN] con una semilla
-{
-    mt[0] = seed;
-    for (mti=1; mti<NN; mti++)
-        mt[mti] =  (6364136223846793005ULL * (mt[mti-1] ^ (mt[mti-1] >> 62)) + mti);
-}
-
-/* initialize by an array with array-length */
-/* init_key is the array for initializing keys */
-/* key_length is its length */
-void InicializaAleatorio()
-{
-    unsigned long long init_key[4] = {0x12345ULL, 0x23456ULL, 0x34567ULL, 0x45678ULL};
-    unsigned long long key_length = 4;
-    unsigned long long i, j, k;
-    init_genrand64(19650218ULL);
-    i=1; j=0;
-    k = (NN>key_length ? NN : key_length);
-    for (; k; k--){
-        mt[i] = (mt[i] ^ ((mt[i-1] ^ (mt[i-1] >> 62)) * 3935559000370003845ULL))
-          + init_key[j] + j; /* non linear */
-        i++; j++;
-        if (i>=NN) { mt[0] = mt[NN-1]; i=1; }
-        if (j>=key_length) j=0;
-    }
-    for (k=NN-1; k; k--)
-    {
-        mt[i] = (mt[i] ^ ((mt[i-1] ^ (mt[i-1] >> 62)) * 2862933555777941757ULL))
-          - i; /* non linear */
-        i++;
-        if (i>=NN) { mt[0] = mt[NN-1]; i=1; }
-    }
-
-    mt[0] = 1ULL << 63; /* MSB is 1; assuring non-zero initial array */
-}
-
-unsigned long long GeneraAleatorio(void) /* generates a random number on [0, 2^64-1]-interval */
-{
-    int i;
-    unsigned long long x;
-    static unsigned long long mag01[2]={0ULL, MATRIX_A};
-
-    if (mti >= NN) { /* generate NN words at one time */
-
-        /* if init_genrand64() has not been called, */
-        /* a default initial seed is used     */
-        if (mti == NN+1)
-            init_genrand64(5489ULL);
-
-        for (i=0;i<NN-MM;i++) {
-            x = (mt[i]&UM)|(mt[i+1]&LM);
-            mt[i] = mt[i+MM] ^ (x>>1) ^ mag01[(int)(x&1ULL)];
-        }
-        for (;i<NN-1;i++) {
-            x = (mt[i]&UM)|(mt[i+1]&LM);
-            mt[i] = mt[i+(MM-NN)] ^ (x>>1) ^ mag01[(int)(x&1ULL)];
-        }
-        x = (mt[NN-1]&UM)|(mt[0]&LM);
-        mt[NN-1] = mt[MM-1] ^ (x>>1) ^ mag01[(int)(x&1ULL)];
-
-        mti = 0;
-    }
-
-    x = mt[mti++];
-
-    x ^= (x >> 29) & 0x5555555555555555ULL;
-    x ^= (x << 17) & 0x71D67FFFEDA60000ULL;
-    x ^= (x << 37) & 0xFFF7EEE000000000ULL;
-    x ^= (x >> 43);
-
-    return x;
-}
-
-void InicializaZobrist()
-{
-    int i,j;
-
-    for (i=0;i<64;i++)
-    {
-        for (j=0;j<12;j++)
+        for (j=0; j<64; j++)
         {
-            Zobrist.escaques[j][i] = GeneraAleatorio();
+            for (k=0; k<64; k++)
+            {
+                historia[i][j][k] = 0;
+            }
         }
     }
-    Zobrist.bando = GeneraAleatorio();
-    for (i=0;i<16;i++)
-    {
-        Zobrist.enroques[i] = GeneraAleatorio();
-    }
-    for (i=0;i<9;i++)
-    {
-        Zobrist.alpaso[i] = GeneraAleatorio();
-    }
 }
 
-void InicializaHash()
-{
-    BITBOARD aux;
 
-    hash_pos = 0;           //inicio a 0
 
-    inicio = MSB(rey_b);    //primero comienzo con las piezas y las casillas
-    hash_pos ^= Zobrist.escaques[Rey_b][inicio];    //a�ado la info del rey blanco q siempre esta
-    aux = peones_b;
-    while((inicio = MSB(aux)) != 64)
-    {
-        hash_pos ^= Zobrist.escaques[Peon_b][inicio];
-        aux ^= SetMask(inicio);                         //borro este peon para q encuentre otro si lo hay
-    };
-    aux = caballos_b;
-    while((inicio = MSB(aux)) != 64)
-    {
-        hash_pos ^= Zobrist.escaques[Caballo_b][inicio];
-        aux ^= SetMask(inicio);
-    };
-    aux = alfiles_b;
-    while((inicio = MSB(aux)) != 64)
-    {
-        hash_pos ^= Zobrist.escaques[Alfil_b][inicio];
-        aux ^= SetMask(inicio);
-    };
-    aux = torres_b;
-    while((inicio = MSB(aux)) != 64)
-    {
-        hash_pos ^= Zobrist.escaques[Torre_b][inicio];
-        aux ^= SetMask(inicio);
-    };
-    aux = damas_b;
-    while((inicio = MSB(aux)) != 64)
-    {
-        hash_pos ^= Zobrist.escaques[Dama_b][inicio];
-        aux ^= SetMask(inicio);
-    };
-
-    inicio = MSB(rey_n);    //ahora = para las negras
-    hash_pos ^= Zobrist.escaques[Rey_n][inicio];
-    aux = peones_n;
-    while((inicio = MSB(aux)) != 64)
-    {
-        hash_pos ^= Zobrist.escaques[Peon_n][inicio];
-        aux ^= SetMask(inicio);
-    };
-    aux = caballos_n;
-    while((inicio = MSB(aux)) != 64)
-    {
-        hash_pos ^= Zobrist.escaques[Caballo_n][inicio];
-        aux ^= SetMask(inicio);
-    };
-    aux = alfiles_n;
-    while((inicio = MSB(aux)) != 64)
-    {
-        hash_pos ^= Zobrist.escaques[Alfil_n][inicio];
-        aux ^= SetMask(inicio);
-    };
-    aux = torres_n;
-    while((inicio = MSB(aux)) != 64)
-    {
-        hash_pos ^= Zobrist.escaques[Torre_n][inicio];
-        aux ^= SetMask(inicio);
-    };
-    aux = damas_n;
-    while((inicio = MSB(aux)) != 64)
-    {
-        hash_pos ^= Zobrist.escaques[Dama_n][inicio];
-        aux ^= SetMask(inicio);
-    };
-
-    if (turno_c == negras)          //si en la posicion de inicializacion le toca al negro
-    {
-        hash_pos ^= Zobrist.bando;  //agrego la data de la Zobrist de bando (si le toca al blanco se distingue por su ausencia)
-    }
-
-    hash_pos ^= Zobrist.enroques[derechos_enroque[0]];
-
-    hash_pos ^= Zobrist.alpaso[alpaso[0]];  //esto Xorea la posicion hash con la correspondiente llave alpaso de la columna
-}
-
-int Setsize_tt(int size)
-{
-    free(tt);
-
-    if (size & (size - 1))
-    {
-        size--;
-        for (int i=1; i<32; i=i*2)
-        size |= size >> i;
-        size++;
-        size>>=1;
-    }
-    if (size < 16)
-    {
-        tt_size = 0;
-        return 0;
-    }
-    tt_size = (size / sizeof(stt)) -1;
-    tt = (stt *) malloc(size);
-
-    return 0;
-}
-
-void Save_tt(unsigned char prof,int val,char bandera,int mejor)
-{
-//    if (!tt_size) return;
-
-    stt * phashe = &tt[hash_pos & tt_size];
-
-    if ( (phashe->confirma == hash_pos) && (phashe->prof > prof) ) return;  //no queremos guardar el resultado del analisis
-                                                                            //si es la misma posicion y tiene menos prof
-    phashe->confirma = hash_pos;        //guardamos todos los datos que conforman una entrada de la tabla
-    phashe->val = val;
-    phashe->bandera = bandera;
-    phashe->prof = prof;
-    phashe->mejorjugada = mejor;
-    phashe->edad = ply_count;
-}
-
-int Probar_tt(BYTE prof,int alfa,int beta)
-{
-//    if (!tt_size) return INVALIDO;          //si no estamos usando la tt entonces salimos sin hacer nada
-
-    stt * phashe = &tt[hash_pos & tt_size]; //buscamos en la tt la entrada q tiene la info de esta posicion y la vinculamos al
-                                            //puntero a estructura "phashe" que creamos
-    if (phashe->confirma == hash_pos)       //nos fijamos si la posicion actual (hash_pos) coincide con la guardada en la tabla
-    {
-        if (phashe->prof >= prof)           //ahora miramos si podemos obtener el valor de la posicion
-        {                                   //(la profundidad guardada debe ser mayor o igual a la actual)
-            if (phashe->bandera == TT_EXACTO)
-            {
-                val = phashe->val;
-                if (val > 29000)
-                    val += ply_count - phashe->edad;
-                if (val < -29000)
-                    val -= ply_count - phashe->edad;
-                return val;
-            }
-            if ((phashe->bandera == TT_ALFA) && (phashe->val <= alfa))
-                return alfa;
-            if ((phashe->bandera == TT_BETA) && (phashe->val >= beta))
-                return beta;
-        }                                       //si fallaron todos los limites para terminar la evaluacion entonces
-        tt_mejor = phashe->mejorjugada;         //aca al menos obtenemos una buena jugada que sera util para ordenar la busqueda
-        tt_hit = 1;                             //aviso q hubo un hit para q ordenar() sepa q hay una jugada de tt disponible
-    }
-    return INVALIDO;     //esto significaria (hasta donde entiendo) que no se produjo un table hit
-}
-
-int Setsize_hojastt(int size)            //dimensiona la hojastt
-{
-    free(hojastt);
-
-    if (size & (size - 1))
-    {
-        size--;
-        for (int i=1; i<32; i=i*2)
-        size |= size >> i;
-        size++;
-        size>>=1;
-    }
-    if (size < 16)
-    {
-        hojastt_size = 0;
-        return 0;
-    }
-
-    hojastt_size = (size / sizeof(shojastt)) -1;
-    hojastt = (shojastt *) malloc(size);
-    return 0;
-}
-
-int Probar_hojastt(int alfa, int beta)      //verifica si se produce un hit en hojastt lo que corta todo Quies()
-{
-//    if (!hojastt_size) return INVALIDO;
-
-    shojastt * phashe = &hojastt[hash_pos & hojastt_size];
-    if ((phashe->confirma == hash_pos) && (phashe->alfa == alfa) && (phashe->beta == beta))
-        return phashe->val;
-
-    return INVALIDO;
-}
-
-void Save_hojastt(int alfa,int beta, int val)       //guarda la hoja con la valoracion calculada y los limites
-{
-//    if (!hojastt_size) return;
-
-    shojastt * phashe = &hojastt[hash_pos & hojastt_size];
-
-    phashe->confirma = hash_pos;
-    phashe->val = val;
-    phashe->alfa = alfa;
-    phashe->beta = beta;
-}
-
-int Setsize_evaltt(int size)            //dimensiona la evaltt
-{
-    free(evaltt);
-
-    if (size & (size - 1))
-    {
-        size--;
-        for (int i=1; i<32; i=i*2)
-        size |= size >> i;
-        size++;
-        size>>=1;
-    }
-    if (size < 16)
-    {
-        evaltt_size = 0;
-        return 0;
-    }
-
-    evaltt_size = (size / sizeof(sevaltt)) -1;
-    evaltt = (sevaltt *) malloc(size);
-    return 0;
-}
-
-int Probar_evaltt()      //verifica si se produce un hit en evaltt lo que evita gastar tiempo en Evaluar()
-{
-//    if (!evaltt_size) return INVALIDO;
-
-    sevaltt * phashe = &evaltt[hash_pos & evaltt_size];
-    if (phashe->confirma == hash_pos)
-        return phashe->val;
-
-    return INVALIDO;
-}
-
-void Save_evaltt(int val)       //guarda la posicion con la valoracion calculada
-{
-//    if (!evaltt_size) return;
-
-    sevaltt * phashe = &evaltt[hash_pos & evaltt_size];
-
-    phashe->confirma = hash_pos;
-    phashe->val = val;
-}
-
-int Setsize_perfttt(int size)            //dimensiona la perfttt
-{
-    free(perfttt);
-
-    if (size & (size - 1))
-    {
-        size--;
-        for (int i=1; i<32; i=i*2)
-        size |= size >> i;
-        size++;
-        size>>=1;
-    }
-    if (size < 16)
-    {
-        perfttt_size = 0;
-        return 0;
-    }
-
-    perfttt_size = (size / sizeof(sperfttt)) -1;
-    perfttt = (sperfttt *) malloc(size);
-    return 0;
-}
-
-BITBOARD Probar_perfttt(BYTE prof)      //verifica si se produce un hit en perfttt
-{
-//    if (!perfttt_size) return INVALIDO;
-
-    sperfttt * phashe = &perfttt[hash_pos & perfttt_size];
-    if (phashe->confirma == hash_pos && phashe->prof == prof)
-        return phashe->nodos;
-
-    return 0;
-}
-
-void Save_perfttt(BITBOARD nodos,BYTE prof)       //guarda la cant de nodos hoja q derivan de la posicion a una prof dada
-{
-//    if (!perfttt_size) return;
-
-    sperfttt * phashe = &perfttt[hash_pos & perfttt_size];
-
-    phashe->confirma = hash_pos;
-    phashe->nodos = nodos;
-    phashe->prof = prof;
-}
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -1257,57 +390,7 @@ void Save_perfttt(BITBOARD nodos,BYTE prof)       //guarda la cant de nodos hoja
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-BYTE LSB(BITBOARD x)
-{
-	if (x == 0)
-		return 64;
-	return ctz(x);                              		//retorna el indice (0..63) del LSB q es 1 (64 si bb == 0)
-}
 
-BYTE MSB(BITBOARD x)
-{
-    if (x == 0)
-        return 64;
-    return (63 - clz(x));
-}
-
-BITBOARD FlipVertical(BITBOARD x)
-{
-    return  ( (x << 56)                        ) |
-            ( (x << 40) & (0x00ff000000000000) ) |
-            ( (x << 24) & (0x0000ff0000000000) ) |
-            ( (x <<  8) & (0x000000ff00000000) ) |
-            ( (x >>  8) & (0x00000000ff000000) ) |
-            ( (x >> 24) & (0x0000000000ff0000) ) |
-            ( (x >> 40) & (0x000000000000ff00) ) |
-            ( (x >> 56) );
-}
-
-BITBOARD FlipDiagA8H1(BITBOARD x)
-{
-   BITBOARD t;
-   const BITBOARD k1 = 0xaa00aa00aa00aa00;
-   const BITBOARD k2 = 0xcccc0000cccc0000;
-   const BITBOARD k4 = 0xf0f0f0f00f0f0f0f;
-
-   t  =       x ^ (x << 36) ;
-   x ^= k4 & (t ^ (x >> 36));
-   t  = k2 & (x ^ (x << 18));
-   x ^=       t ^ (t >> 18) ;
-   t  = k1 & (x ^ (x <<  9));
-   x ^=       t ^ (t >>  9) ;
-   return x;
-}
-
-BITBOARD Rotar90clockwise (BITBOARD x)
-{
-   return FlipDiagA8H1(FlipVertical(x));
-}
-
-BITBOARD Rotar90antiClockwise (BITBOARD x)
-{
-   return FlipVertical(FlipDiagA8H1(x));
-}
 
 void InicializaMasks()		//inicializa las mascaras de columnas, filas set y clear
 {
@@ -1833,56 +916,18 @@ void IniciaRPr()
     nodos = 1;
 }
 
-void EsperaJugada()		//retorna cuando el user jugo algo y obtiene la jugada del user traducida al formato q entiende el programa
+void EsperaJugada(char algeb[4])		//retorna cuando el user jugo algo y obtiene la jugada del user traducida al formato q entiende el programa
 {
-	char algeb[4],a1,b1,c1,d1;
+//	char algeb[4],a1,b1,c1,d1;
+	char a1,b1,c1,d1;
 	while (1)
 	{
-        if (testeando)
-        {
-            if (segunda)            //si se vuelve a pasar x aca en modo testeo quiere decir q los motores estan cometiendo
-            {                       //algun error en la posicion por lo q hay algun bug importante.
-                wcout << "Error de comunicacion entre modulos" << endl;
-                system("pause");    //por lo q paro el programa para ver q sucedio
-            }
-            segunda = 1;
-
-            // The read operation will block until there is data to read
-            wchar_t buffer[128];
-            DWORD numBytesRead = 0;
-            result = ReadFile
-            (
-                pipe,
-                buffer, // the data from the pipe will be put here
-                127 * sizeof(wchar_t), // number of bytes allocated
-                &numBytesRead, // this will store number of bytes actually read
-                NULL // not using overlapped IO
-            );
-
-            if (result)
-            {
-                buffer[numBytesRead / sizeof(wchar_t)] = '\0'; // null terminate the string
-                wcout << "Recibido: " << buffer << endl;
-                a = buffer[0];
-                b = buffer[1];
-                c = buffer[2];
-                d = buffer[3];
-            }
-            else
-            {
-                wcout << "Failed to read data from the pipe." << endl;
-                continue;
-            }
-        }
-        else
-        {
-            printf("Introduce una jugada: ");
-            scanf("%s",algeb);
-            a = algeb[0];
-            b = algeb[1];
-            c = algeb[2];
-            d = algeb[3];
-        }
+//        printf("Introduce una jugada: ");
+//        scanf("%s",algeb);
+        a = algeb[0];
+        b = algeb[1];
+        c = algeb[2];
+        d = algeb[3];
 		if (a!='a'&&a!='b'&&a!='c'&&a!='d'&&a!='e'&&a!='f'&&a!='g'&&a!='h')
 			continue;
 		if (b!='1'&&b!='2'&&b!='3'&&b!='4'&&b!='5'&&b!='6'&&b!='7'&&b!='8')
@@ -1896,7 +941,7 @@ void EsperaJugada()		//retorna cuando el user jugo algo y obtiene la jugada del 
 		b1 = b - 0x31;
 		c1 = c - 0x61;
 		d1 = d - 0x31;
-		inicio = (b1 * 8) + a1;		//inicio y fin van de 0 a 63 q es lo q uso en las bitboards y se calculan como 8 * n�columna + n�fila
+		inicio = (b1 * 8) + a1;		//inicio y fin van de 0 a 63 q es lo q uso en las bitboards y se calculan como 8 * numcolumna + numfila
 		fin = (d1 * 8) + c1;
 		if (turno_c == blancas)		//turno_c es el color del turno al q le toca
 		{
@@ -2734,6 +1779,27 @@ void Guardar()											//esto sirve para guardar el estado actual de la partid
 	tabA1 = tableroA1;
 	tabA8 = tableroA8;
 	hash_pos2 = hash_pos;                               //tambien guardo la clave hash
+
+
+	piezas_anteriores[0][0] = peones_b;					//guardo la posicion de las piezas del tablero actual en el primer lugar
+	piezas_anteriores[0][1] = caballos_b;
+	piezas_anteriores[0][2] = alfiles_b;
+	piezas_anteriores[0][3] = torres_b;
+	piezas_anteriores[0][4] = damas_b;
+	piezas_anteriores[0][5] = rey_b;
+
+	piezas_anteriores[0][6] = peones_n;
+	piezas_anteriores[0][7] = caballos_n;
+	piezas_anteriores[0][8] = alfiles_n;
+	piezas_anteriores[0][9] = torres_n;
+	piezas_anteriores[0][10] = damas_n;
+	piezas_anteriores[0][11] = rey_n;
+
+	turnos_anteriores[0] = turno_c;						//tambien el turno
+	enroques_anteriores[0] = derechos_enroque[0];		//los derechos de enroque
+	alpaso_anteriores[0] = alpaso[0];					//y la posibilidad de peon al paso
+
+
 }
 
 void Recuperar()
@@ -3235,12 +2301,48 @@ int NegaMax(int alfa,int beta,BYTE prof,BYTE draft)     //alfa y beta son los li
 void ManejarReloj()
 {
     QueryPerformanceCounter((LARGE_INTEGER *)&t_fin);
-    t_transcurrido = ((t_fin - t_inicio) * timerFrequency);
-	if (t_transcurrido > 5)                		//si se supero el tiempo maximo por jugada
+    t_transcurrido = ((t_fin - t_inicio) * timerFrequency * 1000);			//lo pongo en ms
+    if (reloj == blancas)
 	{
-		salir = 1;									//entonces salgo del analisis
-        wcout << "Tiempo transcurrido: " << t_transcurrido << endl;
-		longjmp(env, 0);							//con la funcion longjmp
+		if (winc)		//si hay incremento
+		{
+			if (t_transcurrido > (wtime / 40) + (winc * 0.5))      			//si se supero el tiempo maximo por jugada
+			{
+				salir = 1;													//entonces salgo del analisis
+				wcout << "Tiempo de jugada: " << t_transcurrido << endl;
+				longjmp(env, 0);											//con la funcion longjmp
+			}
+		}
+		else			//sin incremento
+		{
+			if (t_transcurrido > (wtime / 40))           					//si se supero el tiempo maximo por jugada
+			{
+				salir = 1;													//entonces salgo del analisis
+				wcout << "Tiempo de jugada: " << t_transcurrido << endl;
+				longjmp(env, 0);											//con la funcion longjmp
+			}
+		}
+	}
+	else
+	{
+		if (binc)		//si hay incremento
+		{
+			if (t_transcurrido > (btime / 40) + (binc * 0.5))      			//si se supero el tiempo maximo por jugada
+			{
+				salir = 1;													//entonces salgo del analisis
+				wcout << "Tiempo de jugada: " << t_transcurrido << endl;
+				longjmp(env, 0);											//con la funcion longjmp
+			}
+		}
+		else			//sin incremento
+		{
+			if (t_transcurrido > (btime / 40))           					//si se supero el tiempo maximo por jugada
+			{
+				salir = 1;													//entonces salgo del analisis
+				wcout << "Tiempo de jugada: " << t_transcurrido << endl;
+				longjmp(env, 0);											//con la funcion longjmp
+			}
+		}
 	}
 }
 
@@ -6508,153 +5610,27 @@ void LeeFEN()			    //pide informacion del usuario acerca de la posicion inicial
 		{
 			fen[i] = 0;
 		}
-		if (test)                     //si ya se esta corriendo un test
+
+//        printf("Nueva partida?: y,n");
+//        scanf(" %c",&m);
+//        if (m == 'y')
+//        {
+            nueva = 1;              //si se pidio iniciar una nueva partida pongo el codigo FEN correcto de una q recien empieza
+            char auxfen[85] = {"rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"};
+            for (i=0;i<85;i++)		//esto es para no tener una lista tan larga hacia abajo
+            {
+                fen[i] = auxfen[i];
+            }
+//        }
+/*
+        else				    //si se pidio introducir la posicion
         {
-            cantpartidas++;
-            colorpic ^= 1;              //asi le permite a los motores jugar una partida con cada color para cada posicion
-            switch (cantpartidas / 2)
-            {
-                case 0:
-                {
-                    wcout << "Posicion 1" << endl;
-                    char auxfen[85] = {"r2qk2r/5pbp/p1np4/1p1Npb2/8/N1P5/PP3PPP/R2QKB1R w KQkq - 0 1"};
-              		for (i=0;i<85;i++)		//esto es para no tener una lista tan larga hacia abajo
-                    {
-                        fen[i] = auxfen[i];
-                    }                           //ahora agrego las primeras jugadas de la partida
-                }break;
-                case 1:
-                {
-                    wcout << "Posicion 2" << endl;
-                    char auxfen[85] = {"r1b2rk1/1pq1bppp/p1nppn2/8/3NP3/1BN1B3/PPP1QPPP/2KR3R w - - 0 1"};
-              		for (i=0;i<85;i++)		//esto es para no tener una lista tan larga hacia abajo
-                    {
-                        fen[i] = auxfen[i];
-                    }
-                }break;
-                case 2:
-                {
-                    wcout << "Posicion 3" << endl;
-                    char auxfen[85] = {"r3k2r/p1qbnppp/1pn1p3/2ppP3/P2P4/2PB1N2/2P2PPP/R1BQ1RK1 b kq - 0 1"};
-              		for (i=0;i<85;i++)		//esto es para no tener una lista tan larga hacia abajo
-                    {
-                        fen[i] = auxfen[i];
-                    }
-                }break;
-                case 3:
-                {
-                    wcout << "Posicion 4" << endl;
-                    char auxfen[85] = {"r1b2rk1/2q1bppp/p2p1n2/npp1p3/3PP3/2P2N1P/PPBN1PP1/R1BQR1K1 b - - 0 1"};
-              		for (i=0;i<85;i++)		//esto es para no tener una lista tan larga hacia abajo
-                    {
-                        fen[i] = auxfen[i];
-                    }
-                }break;
-                case 4:
-                {
-                    wcout << "Posicion 5" << endl;
-                    char auxfen[85] = {"r1bqrnk1/pp2bppp/2p2n2/3p2B1/3P4/2NBPN2/PPQ2PPP/R4RK1 w - - 0 1"};
-              		for (i=0;i<85;i++)		//esto es para no tener una lista tan larga hacia abajo
-                    {
-                        fen[i] = auxfen[i];
-                    }
-                }break;
-                case 5:
-                {
-                    wcout << "Posicion 6" << endl;
-                    char auxfen[85] = {"rnbq1rk1/pp2ppbp/6p1/8/3PP3/5N2/P3BPPP/1RBQK2R b K - 0 1"};
-              		for (i=0;i<85;i++)		//esto es para no tener una lista tan larga hacia abajo
-                    {
-                        fen[i] = auxfen[i];
-                    }
-                }break;
-                case 6:
-                {
-                    wcout << "Posicion 7" << endl;
-                    char auxfen[85] = {"2rq1rk1/p2nbppp/bpp1p3/3p4/2PPP3/1PB3P1/P2N1PBP/R2Q1RK1 b - e3 0 1"};
-              		for (i=0;i<85;i++)		//esto es para no tener una lista tan larga hacia abajo
-                    {
-                        fen[i] = auxfen[i];
-                    }
-                }break;
-                case 7:
-                {
-                    wcout << "Posicion 8" << endl;
-                    char auxfen[85] = {"r1bqnrk1/ppp1npbp/3p2p1/3Pp3/2P1P3/2N1B3/PP2BPPP/R2QNRK1 b - - 0 1"};
-              		for (i=0;i<85;i++)		//esto es para no tener una lista tan larga hacia abajo
-                    {
-                        fen[i] = auxfen[i];
-                    }
-                }break;
-                case 8:
-                {
-                    wcout << "Posicion 9" << endl;
-                    char auxfen[85] = {"r1bq1rk1/ppp1npbp/2np2p1/4p3/2P5/2NPP1P1/PP2NPBP/R1BQ1RK1 b - - 0 1"};
-              		for (i=0;i<85;i++)		//esto es para no tener una lista tan larga hacia abajo
-                    {
-                        fen[i] = auxfen[i];
-                    }
-                }break;
-                case 9:
-                {
-                    wcout << "Posicion 10" << endl;
-                    char auxfen[85] = {"rnb1kb1r/1p3ppp/p2ppn2/6B1/3NPP2/q1N5/P1PQ2PP/1R2KB1R w Kkq - 0 1"};
-              		for (i=0;i<85;i++)		//esto es para no tener una lista tan larga hacia abajo
-                    {
-                        fen[i] = auxfen[i];
-                    }
-                }break;
-            }
+            nueva = 0;
+            fflush(stdin);
+            wcout << "Introducir Posicion en formato FEN: " << endl;
+            gets(fen);	        //introduzco por teclado el codigo FEN
         }
-        else
-        {
-            printf("Nueva partida?: y,n");
-            scanf(" %c",&m);
-            if (m == 'y')
-            {
-                nueva = 1;              //si se pidio iniciar una nueva partida pongo el codigo FEN correcto de una q recien empieza
-                char auxfen[85] = {"rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"};
-                for (i=0;i<85;i++)		//esto es para no tener una lista tan larga hacia abajo
-                {
-                    fen[i] = auxfen[i];
-                }
-            }
-            else				    //si se pidio introducir la posicion
-            {
-                nueva = 0;
-                if (testeando)
-                {
-                    printf("Comenzar test entre motores? y,n ");
-                    scanf(" %c",&m);
-                    if (m == 'y')
-                    {
-                        test = 1;               //entra si se desea testear los motores en un match con posiciones prefijadas
-                        cantpartidas = 0;       //inicio contador de partidas del match
-                        colorpic = blancas;     //empieza con blancas la version del motor estable
-                        wcout << "Posicion 1" << endl;
-                        char auxfen[85] = {"r2qk2r/5pbp/p1np4/1p1Npb2/8/N1P5/PP3PPP/R2QKB1R w KQkq - 0 1"};
-                        for (i=0;i<85;i++)		//esto es para no tener una lista tan larga hacia abajo
-                        {
-                            fen[i] = auxfen[i];
-                        }
-                    }
-                    else                //sino solo quiero introducir una posicion particular y q jueguen los motores desde ahi
-                    {
-                        test = 0;
-                        fflush(stdin);
-                        wcout << "Introducir Posicion en formato FEN: " << endl;
-                        gets(fen);	        //introduzco por teclado el codigo FEN
-                    }
-                }
-                else                //sino solo quiero introducir una posicion particular y q inicie desde ahi
-                {
-                    test = 0;
-                    fflush(stdin);
-                    wcout << "Introducir Posicion en formato FEN: " << endl;
-                    gets(fen);	        //introduzco por teclado el codigo FEN
-                }
-            }
-        }
+*/
 		for (i=0;i<85;i++)	//lee el vector q se recibio
 		{
             if (error)
