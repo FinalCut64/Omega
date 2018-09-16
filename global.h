@@ -1,10 +1,11 @@
 #ifndef GLOBAL_H_INCLUDED
 #define GLOBAL_H_INCLUDED
 
+#include <string>
 #include "definiciones.h"
 
 void Init();
-void LeeFEN();
+void LeeFEN(const std::string&);
 void ReiniciaRegistros();
 void EsperaJugada(char[4]);
 BYTE Legal();								//se fija si la jugada es totalmente correcta en terminos legales (FALSE si es ilegal y TRUE si es legal)
@@ -55,10 +56,16 @@ typedef enum
     Peon_n = 6, Caballo_n = 7, Alfil_n = 8, Torre_n = 9, Dama_n = 10, Rey_n = 11,
 }trebejos;
 
-extern int segunda;
-extern BYTE nueva,resultado;
+enum Limites
+{
+	NORMAL = 1, INFINITO = 2, NODES = 3, MOVETIME = 4, DEPTH = 5
+};
+
+extern Limites limite;
+extern unsigned int prof_max,depth_jugada,tiempo_jugada;
+extern unsigned long long nodos_jugada;
 extern BYTE turno,turno_c,colorpic,bien,semibien,inicio,fin,pieza;
-extern BYTE prof_max,jugadas[MAXPROF][600],Qcapturas[40][80],Qcorona[40];
+extern BYTE jugadas[MAXPROF][600],Qcapturas[40][80],Qcorona[40];
 extern BYTE comio[MAXPROF],alpaso[MAXPROF],derechos_enroque[MAXPROF],vp[MAXPROF][3];
 extern BYTE legales[MAXPROF],jugadas_reversibles,nulo,Qcomio[40];
 extern BYTE salir,unica;
@@ -75,11 +82,11 @@ extern unsigned int pv[MAXPROF][MAXPROF];
 extern int valoracion,val,estimo,total;
 extern int killer[MAXPROF][2];
 extern unsigned long long divide[600]; //para la funcion divide dentro del perft() q permite detectar errores en el generador de movs
-extern unsigned long long saliointerrumpido,salionormal;	//estas son para ver estadisticas
 extern unsigned long long nodos,Qnodos,nodosnulos,cortesnulo,llamadasevaluar,cortes_inut_inversa;
 extern unsigned long long cantventanas,falloventana,eficiencia_1,eficiencia_2,eficiencia,qpasaaca;
 extern float cant_analisis,proftotal,profmedia;					//igual q estas q muestran el nivel de juego promedio de la partida
 
+extern std::string recibido;
 extern unsigned long long freq,t_inicio,t_fin;    //para el manejo del tiempo
 extern double timerFrequency, t_transcurrido;
 extern unsigned long long wtime, btime, winc, binc;

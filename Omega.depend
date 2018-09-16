@@ -37,15 +37,15 @@
 	<string>
 	"global.h"
 
-1535600916 source:c:\users\user\desktop\demian\omega\bitboard.cpp
+1536537136 source:c:\users\user\desktop\demian\omega\bitboard.cpp
 	"bitboard.h"
 
-1535600916 c:\users\user\desktop\demian\omega\bitboard.h
+1536537136 c:\users\user\desktop\demian\omega\bitboard.h
 	"definiciones.h"
 
-1535600916 c:\users\user\desktop\demian\omega\definiciones.h
+1537000592 c:\users\user\desktop\demian\omega\definiciones.h
 
-1536346677 source:c:\users\user\desktop\demian\omega\main.cpp
+1537073769 source:c:\users\user\desktop\demian\omega\main.cpp
 	<iostream>
 	<string>
 	<windows.h>
@@ -53,26 +53,30 @@
 	<stdlib.h>
 	<setjmp.h>
 	<string.h>
+	<math.h>
 	"definiciones.h"
 	"global.h"
 	"bitboard.h"
 	"tt.h"
 
-1536482906 c:\users\user\desktop\demian\omega\global.h
+1537044779 c:\users\user\desktop\demian\omega\global.h
+	<string>
 	"definiciones.h"
 
-1535600916 c:\users\user\desktop\demian\omega\tt.h
+1536537136 c:\users\user\desktop\demian\omega\tt.h
 	"definiciones.h"
 
-1535600916 source:c:\users\user\desktop\demian\omega\tt.cpp
+1536537136 source:c:\users\user\desktop\demian\omega\tt.cpp
 	<windows.h>
 	"global.h"
 	"tt.h"
 	"bitboard.h"
 
-1536529731 source:c:\users\user\desktop\demian\omega\uci.cpp
+1537048186 source:c:\users\user\desktop\demian\omega\uci.cpp
 	<iostream>
 	<string>
+	<math.h>
+	<thread>
 	"global.h"
 	"tt.h"
 

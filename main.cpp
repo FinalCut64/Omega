@@ -10,6 +10,7 @@
 #include <stdlib.h>
 #include <setjmp.h>
 #include <string.h>
+#include <math.h>
 
 #include "definiciones.h"
 #include "global.h"
@@ -33,7 +34,7 @@ void Uci();
 void IniciaVar();
 void InicializaRegistros();		            //inicia los registros a su estado por defecto
 void ReiniciaRegistros();		            //antes de cada nueva partida hay q reiniciar varios registros
-void LeeFEN();								//prepara todos los registros necesarios para q comience la partida (nueva o con introduccion de FEN)
+void LeeFEN(const std::string);				//prepara todos los registros necesarios para q comience la partida (nueva o con introduccion de FEN)
 void EsperaJugada(char[4]);					//retorna cuando el user jugo algo y obtiene la jugada del user traducida al formato q entiende el programa
 void InicializaMasks();						//inicializa las mascaras de columnas, filas set y clear
 void IniciaBitboards();						//inicializa las bitboards ataques_peon,ataques_caballo,alpaso,etc
@@ -81,7 +82,7 @@ void Guardar();								//esta junto con recuperar permite manejar la posibilidad
 void Recuperar();							//por lo q todos los registros quedarian en cualquier estado. Estas 2 funciones solucionan eso
 BYTE Repite();								//avisa si la posicion q esta analizando el pic ya se produjo para q la evalue como tablas si es asi y no repita en posiciones ganadas
 BYTE TresRepet();							//permite determinar si la partida debe acabar por regla de tres repeticiones
-BYTE Libro();                               //el libro de aperturas propio del modulo
+//BYTE Libro();                               //el libro de aperturas propio del modulo
 void Anotar();                              //registra la partida en curso a medida que se realizan las jugadas
 void ExportarPartida();
 void ManejarReloj();
@@ -111,9 +112,10 @@ jmp_buf env;								//esta es para la funcion longjump q permite salir de negama
 
 ///////////////////Variables globales/////////////////////////////////
 
-BYTE nueva,resultado;
+unsigned int prof_max, prof_max2;
+BYTE resultado;
 BYTE turno,turno_c,colorpic,bien,semibien,inicio,fin,pieza;
-BYTE prof_max,jugadas[MAXPROF][600],Qcapturas[40][80],Qcorona[40];
+BYTE jugadas[MAXPROF][600],Qcapturas[40][80],Qcorona[40];
 BYTE comio[MAXPROF],alpaso[MAXPROF],derechos_enroque[MAXPROF],vp[MAXPROF][3];
 BYTE legales[MAXPROF],jugadas_reversibles,nulo,Qcomio[40];
 BYTE salir,unica;
@@ -130,7 +132,6 @@ unsigned int pv[MAXPROF][MAXPROF];
 int valoracion,val,estimo,total;
 int killer[MAXPROF][2];
 unsigned long long divide[600]; //para la funcion divide dentro del perft() q permite detectar errores en el generador de movs
-unsigned long long saliointerrumpido,salionormal;	//estas son para ver estadisticas
 unsigned long long nodos,Qnodos,nodosnulos,cortesnulo,llamadasevaluar,cortes_inut_inversa;
 unsigned long long cantventanas,falloventana,eficiencia_1,eficiencia_2,eficiencia,qpasaaca;
 float cant_analisis,proftotal,profmedia;					//igual q estas q muestran el nivel de juego promedio de la partida
@@ -226,16 +227,9 @@ int main(void)
 {
     QueryPerformanceCounter((LARGE_INTEGER *)&t_inicio);
     Uci();
-
+/*
 	while (1)
 	{
-/*
-        LeeFEN();
-        InicializaHash();       //una vez configurada la posición se establece la clave hash de la misma
-		ReiniciaRegistros();	//al comenzar una nueva partida hay q reiniciar varios registros para q todo funcione bien (esto inicia la partida)
-//        valoracion = Evaluar();
-        QueryPerformanceCounter((LARGE_INTEGER *)&t_inicio);
-*/
 		do						//aca va a estar todo el programa y se va a volver cada vez que se complete un movimiento satisfactorio del humano o del pic
 		{
 			if (turno == 0)//HUMANO)	//entra si le toca jugar al jugador humano
@@ -266,6 +260,7 @@ int main(void)
 		wcout << t_transcurrido << endl;
 		ExportarPartida();                              //que saque la partida con el formato del fritz
 	};//end while de todo el programa (del q no se sale nunca)
+*/
 }
 
 /////////////////////////////////////////////////////////////////////////////
@@ -1879,7 +1874,6 @@ void DescomprimirVP()					//pasa del formato de la pv al q se necesita para real
 
 void Analiza()							//busca la "mejor" jugada q se pueda (aca esta toda la magia y los errores jeje)
 {
-    BYTE prof_max2 = 0;
     int i;
 
     QueryPerformanceCounter((LARGE_INTEGER *)&t_inicio);    //inicio el contador de tiempo
@@ -1891,6 +1885,9 @@ void Analiza()							//busca la "mejor" jugada q se pueda (aca esta toda la magi
 	eficiencia_2 = 0;
 	tt_hits = 0;                        //cantidad de coincidencias de la tt durante la busqueda
 	prof_max = 0;						//comienzan las iteraciones desde profundidad de hojas 1 (profundidad se incrementa antes de llamar a MinMax)
+	prof_max2 = 0;
+	nodos = 0;
+	Qnodos = 0;
 	nulo = 0;
 	mcut = 1;
 //	ext = 0;
@@ -1906,7 +1903,6 @@ void Analiza()							//busca la "mejor" jugada q se pueda (aca esta toda la magi
 	setjmp(env);						//aca se retorna si por alguna razon se debe dejar de analizar
 	if (salir == 1)						//si estamos aca producto de que quisimos salir retornamos (ya tenemos una jugada)
 	{
-		saliointerrumpido++;			//para ver cuantas veces sale asi y cuantas de la otra forma
 		prof_max = prof_max2;
 		proftotal += prof_max -1;		//la profundidad a la q se evaluo la jugada es una menos q la q hay xq se interrumpio la busqueda
 		profmedia = proftotal/cant_analisis;		//para ver a q nivel aproximado esta jugando la partida
@@ -1919,10 +1915,21 @@ void Analiza()							//busca la "mejor" jugada q se pueda (aca esta toda la magi
 	}
 	do																				//aca empieza la busqueda en profundidad iterada
 	{
+		QueryPerformanceCounter((LARGE_INTEGER *)&t_fin);
+		t_transcurrido = ((t_fin - t_inicio) * timerFrequency * 1000);				//lo pongo en ms
+		std::cout << "info depth " << prof_max2 << " score cp " << valoracion << " nodes " << nodos << " nps " << floor(1000 * nodos / t_transcurrido) << " time " << t_transcurrido << std::endl;
+		if (limite == DEPTH)														//si la condicion de analisis es por profundidad fija
+		{
+			if (prof_max >= depth_jugada)											//si se alcanzó la profundidad fija por jugada salimos del analisis
+			{
+				QueryPerformanceCounter((LARGE_INTEGER *)&t_fin);
+				t_transcurrido = ((t_fin - t_inicio) * timerFrequency * 1000);		//lo pongo en ms
+				salir = 1;
+				longjmp(env, 0);													//con la funcion longjmp
+			}
+		}
 		prof_max++;
 		prof_max2 = prof_max;           //la guardo xq prof_max puede variar dentro de Negamax debido a LMR y poda de mov nulo
-		nodos = 0;
-		Qnodos = 0;
 		hojastt_hits = 0;
 		evaltt_hits = 0;
 		qpasaaca = 0;
@@ -1951,9 +1958,9 @@ void Analiza()							//busca la "mejor" jugada q se pueda (aca esta toda la magi
 		}
 		estimo = valoracion;														//estimo se usa en la ventana de aspiracion como valor medio de referencia
 		DescomprimirVP();														    //y actualizo la vp
-	}while(abs(valoracion) < 29000 && !unica && prof_max < 20);
+	}while (1);
+//	}while(abs(valoracion) < 29000 && !unica && prof_max < 20);
     //sale si es unica o si vio mate o si alcanza profundidad fija
-	salionormal++;												//para ver cuantas veces sale asi y cuantas de la otra forma
 	if(eficiencia_1 != 0)
 		eficiencia = (eficiencia_2*100 ) / eficiencia_1;
 	proftotal += prof_max;						//la profundidad a la q se evaluo la jugada es prof_max xq no se interrumpio la busqueda
@@ -2088,12 +2095,51 @@ int NegaMax(int alfa,int beta,BYTE prof,BYTE draft)     //alfa y beta son los li
         return val;
     }
 #endif // USAR_TT
-	if (draft == 0)// + ext)           //no tiene sentido reducir y extender una jugada asi q si ext == 1 entonces redu == 0 y viceversa
+	if (draft == 0)// + ext)           					//no tiene sentido reducir y extender una jugada asi q si ext == 1 entonces redu == 0 y viceversa
 	{
 		nodos++;
 #ifdef USAR_RELOJ
 		if ((nodos & 1023) == 0)
-            ManejarReloj();
+		{
+			switch (limite)
+			{
+				case NORMAL:				//si es partida normal que mire el manejo de tiempo
+				{
+					ManejarReloj();
+				}break;
+				case INFINITO:				//si es analisis infinito no hay q hacer nada (seguimos hasta q nos paren lo cual de momento es nunca xq no puedo recibir input de la GUI)
+				{
+
+				}break;
+				case NODES:
+				{
+					if (nodos >= nodos_jugada)
+					{
+						QueryPerformanceCounter((LARGE_INTEGER *)&t_fin);
+						t_transcurrido = ((t_fin - t_inicio) * timerFrequency * 1000);	//lo pongo en ms
+						salir = 1;														//entonces salgo del analisis
+						std::cout << "info depth " << prof_max2 << " score cp " << valoracion << " nodes " << nodos << " nps " << floor(1000 * nodos / t_transcurrido) << " time " << t_transcurrido << std::endl;
+						longjmp(env, 0);												//con la funcion longjmp
+					}
+				}break;
+				case MOVETIME:
+				{
+					QueryPerformanceCounter((LARGE_INTEGER *)&t_fin);
+					t_transcurrido = ((t_fin - t_inicio) * timerFrequency * 1000);		//lo pongo en ms
+					if (t_transcurrido >= tiempo_jugada)						     	//si se supero el tiempo maximo por jugada
+					{
+						salir = 1;														//entonces salgo del analisis
+						std::cout << "info depth " << prof_max2 << " score cp " << valoracion << " nodes " << nodos << " nps " << floor(1000 * nodos / t_transcurrido) << " time " << t_transcurrido << std::endl;
+						longjmp(env, 0);												//con la funcion longjmp
+					}
+				}break;
+				case DEPTH:				//si es por profundidad no hay q hacer nada (ya se chequea la condicion de salida en analiza())
+				{
+
+				}break;
+			}
+		}
+
 #endif // USAR_RELOJ
 #ifdef USAR_TT
         if ((val = Probar_hojastt(alfa, beta)) != INVALIDO)  //miro si hay hit en la hojastt
@@ -2309,7 +2355,7 @@ void ManejarReloj()
 			if (t_transcurrido > (wtime / 40) + (winc * 0.5))      			//si se supero el tiempo maximo por jugada
 			{
 				salir = 1;													//entonces salgo del analisis
-				wcout << "Tiempo de jugada: " << t_transcurrido << endl;
+				std::cout << "info depth " << prof_max2 << " score cp " << valoracion << " nodes " << nodos << " nps " << floor(1000 * nodos / t_transcurrido) << " time " << t_transcurrido << std::endl;
 				longjmp(env, 0);											//con la funcion longjmp
 			}
 		}
@@ -2318,7 +2364,7 @@ void ManejarReloj()
 			if (t_transcurrido > (wtime / 40))           					//si se supero el tiempo maximo por jugada
 			{
 				salir = 1;													//entonces salgo del analisis
-				wcout << "Tiempo de jugada: " << t_transcurrido << endl;
+				std::cout << "info depth " << prof_max2 << " score cp " << valoracion << " nodes " << nodos << " nps " << floor(1000 * nodos / t_transcurrido) << " time " << t_transcurrido << std::endl;
 				longjmp(env, 0);											//con la funcion longjmp
 			}
 		}
@@ -2330,7 +2376,7 @@ void ManejarReloj()
 			if (t_transcurrido > (btime / 40) + (binc * 0.5))      			//si se supero el tiempo maximo por jugada
 			{
 				salir = 1;													//entonces salgo del analisis
-				wcout << "Tiempo de jugada: " << t_transcurrido << endl;
+				std::cout << "info depth " << prof_max2 << " score cp " << valoracion << " nodes " << nodos << " nps " << floor(1000 * nodos / t_transcurrido) << " time " << t_transcurrido << std::endl;
 				longjmp(env, 0);											//con la funcion longjmp
 			}
 		}
@@ -2339,13 +2385,14 @@ void ManejarReloj()
 			if (t_transcurrido > (btime / 40))           					//si se supero el tiempo maximo por jugada
 			{
 				salir = 1;													//entonces salgo del analisis
-				wcout << "Tiempo de jugada: " << t_transcurrido << endl;
+				std::cout << "info depth " << prof_max2 << " score cp " << valoracion << " nodes " << nodos << " nps " << floor(1000 * nodos / t_transcurrido) << " time " << t_transcurrido << std::endl;
 				longjmp(env, 0);											//con la funcion longjmp
 			}
 		}
 	}
 }
 
+/*
 BYTE Libro()
 {
 	int aleatorio;
@@ -2491,7 +2538,7 @@ BYTE Libro()
 	}
 	return 0;									//si no es ninguna de estas no es posicion de libro por lo que se debe pensar
 }
-
+*/
 
 
 BYTE Nulo_ok(BYTE prof)				//devuelve 1 si se puede hacer un movimiento nulo y 0 si no
@@ -5569,12 +5616,14 @@ BYTE TresRepet()
 	return 0;											//no fueron 3 repeticiones
 }
 
-void LeeFEN()			    //pide informacion del usuario acerca de la posicion inicial y deja todo listo para q comience la partida
+void LeeFEN(const std::string& auxfen)			    //pide informacion del usuario acerca de la posicion inicial y deja todo listo para q comience la partida
 {
 	char m = 0;
 	BYTE i,error,columna,espacio,indice;
 	int j,k;
 	BITBOARD aux;
+//	int dale;
+//	dale = auxfen.size()
 
 	peones_b = 0;		    //inicializo a 0 las bitboards q tienen la posicion del tablero
 	caballos_b = 0;
@@ -5615,9 +5664,9 @@ void LeeFEN()			    //pide informacion del usuario acerca de la posicion inicial
 //        scanf(" %c",&m);
 //        if (m == 'y')
 //        {
-            nueva = 1;              //si se pidio iniciar una nueva partida pongo el codigo FEN correcto de una q recien empieza
-            char auxfen[85] = {"rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"};
-            for (i=0;i<85;i++)		//esto es para no tener una lista tan larga hacia abajo
+//            nueva = 1;              //si se pidio iniciar una nueva partida pongo el codigo FEN correcto de una q recien empieza
+//            char auxfen[85] = {"rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"};
+            for (i=0;i<auxfen.size();i++)
             {
                 fen[i] = auxfen[i];
             }
@@ -5631,7 +5680,7 @@ void LeeFEN()			    //pide informacion del usuario acerca de la posicion inicial
             gets(fen);	        //introduzco por teclado el codigo FEN
         }
 */
-		for (i=0;i<85;i++)	//lee el vector q se recibio
+		for (i=0;i<auxfen.size();i++)	//lee el vector q se recibio
 		{
             if (error)
                 break;

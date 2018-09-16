@@ -5,13 +5,14 @@
     //                            DEFINICIONES DEL MOTOR
     /////////////////////////////////////////////////////////////////////////////
 
-#define	PIC           1
-#define HUMANO        0
+#define	PIC				1
+#define HUMANO			0
 
-#define INVALIDO      31000
-#define MATE					29999
-#define R             2
-#define MAXPROF       30
+#define INVALIDO		31000
+#define MATE			29999
+#define R				2
+#define MAXPROF			30
+#define startpos		"rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
 
 #define Abs(a)                    (((a) > 0) ? (a) : -(a))
 #define Max(a,b)                  (((a) > (b)) ? (a) : (b))
