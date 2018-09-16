@@ -45,7 +45,7 @@
 
 1537000592 c:\users\user\desktop\demian\omega\definiciones.h
 
-1537073769 source:c:\users\user\desktop\demian\omega\main.cpp
+1537132487 source:c:\users\user\desktop\demian\omega\main.cpp
 	<iostream>
 	<string>
 	<windows.h>
@@ -72,7 +72,7 @@
 	"tt.h"
 	"bitboard.h"
 
-1537048186 source:c:\users\user\desktop\demian\omega\uci.cpp
+1537127919 source:c:\users\user\desktop\demian\omega\uci.cpp
 	<iostream>
 	<string>
 	<math.h>

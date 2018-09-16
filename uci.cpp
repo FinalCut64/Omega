@@ -128,7 +128,6 @@ void Uci()
 			{
 				recibido.erase(0,9);							//eliminar palabra infinite y espacio
 				limite = INFINITO;
-				Analiza();
 			}
 			else if (recibido.find("movetime") == 0)
 			{

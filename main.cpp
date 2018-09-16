@@ -47,7 +47,7 @@ BYTE ChequeaOrtogonal();					//lo mismo q ChequeaDiagonal pero con los movimient
 void Analiza();								//busca la "mejor" jugada q se pueda (aca esta toda la magia y los errores jeje)
 int  Raiz(int,int,BYTE);                    //Negamax() para la posicion raiz
 int  NegaMax(int,int,BYTE,BYTE);			//funcion de busqueda Negamax con poda alfa-beta y demas tecnicas de busqueda
-BITBOARD Perft(BYTE);						//para chequear el generador de movimientos
+int Perft(BYTE,BYTE);						//para chequear el generador de movimientos
 void GenerarTodas(BYTE);					//genera todas las jugadas semilegales en la posicion y profundidad actual
 BITBOARD GeneraAlfil(BYTE);					//usada por GenerarTodas para los movimientos diagonales
 BITBOARD GeneraTorre(BYTE);					//usada por GenerarTodas para los movimientos ortogonales
@@ -1875,7 +1875,13 @@ void DescomprimirVP()					//pasa del formato de la pv al q se necesita para real
 void Analiza()							//busca la "mejor" jugada q se pueda (aca esta toda la magia y los errores jeje)
 {
     int i;
-
+/*
+	for (i=0; i<9;i++)
+	{
+		nodos = 0;
+		Perft(0, i);
+	}
+*/
     QueryPerformanceCounter((LARGE_INTEGER *)&t_inicio);    //inicio el contador de tiempo
 //	if (Libro())						//si se dan las condiciones para q encuentre una jugada de libro q la haga
 //		return;							//y retorne inmediatamente
@@ -3319,11 +3325,12 @@ void QDescapturaNegras(BYTE fin, BYTE Qprof)			//le repone a las blancas las pie
 		}break;
 	}
 }
-
-BITBOARD Perft(BYTE prof)		//perft para cuando cambio algo saber si esta generando bien todos los movimientos
+/*
+BITBOARD Perft(BYTE profmx)		//perft para cuando cambio algo saber si esta generando bien todos los movimientos
 {
-	BYTE z;
+	BYTE z,profactual = 0;
 	BITBOARD parcial = 0;
+
 
     if ((parcial = Probar_perfttt(prof_max - prof)) != 0)   //pruebo si hay hit en la perfttt para ahorrar trabajo
     {
@@ -3331,28 +3338,28 @@ BITBOARD Perft(BYTE prof)		//perft para cuando cambio algo saber si esta generan
         return parcial;
     }
 
-	if (prof == prof_max)   //si se llego a la hoja
-		return 1;           //anoto un nodo mas
+	if (profactual == profmx)		//si se llego a la hoja
+		return 1;           		//anoto un nodo mas
 
-	GenerarTodas(prof);
-	for (z = 0 ; z < ultimajugada[prof] ; z = z + 3)
+	GenerarTodas(profactual);
+	for (z = 0 ; z < ultimajugada[profactual] ; z = z + 3)
 	{
-		HacerJugada(jugadas[prof][z],jugadas[prof][z+1],jugadas[prof][z+2],prof);
+		HacerJugada(jugadas[profactual][z],jugadas[profactual][z+1],jugadas[profactual][z+2],profactual);
 		if (!EnJaque(turno_c))	//si el rey del bando q jugo no esta en jaque es totalmente legal
 		{
-			parcial += Perft(prof + 1);
+			parcial += Perft(profactual + 1);
 		}
-		DeshacerJugada(jugadas[prof][z],jugadas[prof][z+1],jugadas[prof][z+2],prof);
-/*
+		DeshacerJugada(jugadas[profactual][z],jugadas[profactual][z+1],jugadas[profactual][z+2],profactual);
+
 		if (prof == 0)       //si terminamos de analizar una jugada de la posicion raiz
         {
             divide[z/3] = nodos;    //anotamos la cantidad de nodos de esa jugada (funcion divide)
             nodos = 0;              //y reiniciamos para la proxima
         }
-*/
+
 	}
-    Save_perfttt(parcial,prof_max-prof);
-/*
+//    Save_perfttt(parcial,prof_max-prof);
+
 	if (prof == 0)   //si estamos terminando es tiempo de recuperar la cantidad total de nodos
     {
         nodos = 0;
@@ -3361,8 +3368,48 @@ BITBOARD Perft(BYTE prof)		//perft para cuando cambio algo saber si esta generan
             nodos += divide[z/3];       //sumamos todos los resultados parciales de cada jugada de la posicion raiz
         }
     }
-*/
+
 	return parcial;
+}
+*/
+int Perft(BYTE prof, BYTE pmax)		//perft para cuando cambio algo saber si esta generando bien todos los movimientos
+{
+	BYTE z;
+//	int alfa;
+
+	if (prof == pmax)
+	{
+		nodos++;
+		return 0;// (Evaluar());
+	}
+//	alfa = -30000;
+	GenerarTodas(prof);
+	for (z = 0 ; z < ultimajugada[prof] ; z = z + 3)
+	{
+		HacerJugada(jugadas[prof][z],jugadas[prof][z+1],jugadas[prof][z+2],prof);
+		if (!EnJaque(turno_c))	//si el rey del bando q jugo no esta en jaque es totalmente legal
+		{
+			valoracion = -Perft(prof + 1, pmax);
+//			if(valoracion > alfa)
+//				alfa = valoracion;
+		}
+		DeshacerJugada(jugadas[prof][z],jugadas[prof][z+1],jugadas[prof][z+2],prof);
+		if (prof == 0)       //si terminamos de analizar una jugada de la posicion raiz
+        {
+            divide[z/3] = nodos;    //anotamos la cantidad de nodos de esa jugada (funcion divide)
+            nodos = 0;              //y reiniciamos para la proxima
+        }
+	}
+	if (prof == 0)   //si estamos terminando es tiempo de recuperar la cantidad total de nodos
+    {
+        nodos = 0;
+        for (z=0;z<ultimajugada[0];z=z+3)
+        {
+            nodos += divide[z/3];       //sumamos todos los resultados parciales de cada jugada de la posicion raiz
+        }
+        std::cout << nodos << " Posiciones encontradas" << std::endl;
+    }
+	return 0;//alfa;
 }
 
 BITBOARD GeneraAlfil(BYTE inicio)										//genera todos los ataques diagonales posibles desde la casilla inicio en la posicion actual
