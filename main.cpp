@@ -28,7 +28,6 @@ void LeeFEN(const std::string);				//prepara todos los registros necesarios para
 void EsperaJugada(char[4]);					//retorna cuando el user jugo algo y obtiene la jugada del user traducida al formato q entiende el programa
 void InicializaMasks();						//inicializa las mascaras de columnas, filas set y clear
 void IniciaBitboards();						//inicializa las bitboards ataques_peon,ataques_caballo,alpaso,etc
-void IniciaRPr();                           //genera la tabla q contiene los valores para todas las posiciones del final RP vs r
 void QuePieza();							//pone en el reg pieza el valor correspondiente a la pieza seleccioneda por el user
 
 int Perft(BYTE,BYTE);						//para chequear el generador de movimientos
@@ -203,7 +202,6 @@ void Init()
 
 	InicializaMasks();			//inicializa las mascaras usadas para trabajar con bits a lo largo de todo el programa
 	IniciaBitboards();
-	IniciaRPr();
 	InicializaRegistros();		//en cada reinicio del programa hay q iniciar varias variables para q todo ande bien
 }
 
@@ -658,145 +656,6 @@ alcanzados por el rey adversario
     }
 }
 
-void IniciaRPr()
-{
-    int t,p,rb,rn;
-    BITBOARD aux;
-
-    for (t=0;t<2;t++)   //turno q le toca mover (0 negras 1 blancas)
-    {
-    for (p=0;p<64;p++)  //posicion del peon
-    {
-    for (rb=0;rb<64;rb++)  //posicion del rey blanco
-    {
-    for (rn=0;rn<64;rn++)  //posicion del rey negro
-    {
-        RPr[t][p][rb][rn] = 5;  //los inicializo a todos a un valor imposible para detectar posibles fallas en la clasificacion
-        rey_b = SetMask(rb);    //primero llenamos con lo q corresponde a las bitboards
-        rey_n = SetMask(rn);
-        peones_b = SetMask(p);
-        //ahora hay q escribir el codigo para caracterizar todas las posibles posiciones de RP vs r
-        //primero detectamos las posiciones q son ilegales a las q les asignamos el valor 0
-        if (p < 8 || p > 55)            //si hay peon en 1era o en 8ava
-        {
-            RPr[t][p][rb][rn] = 0;      //es posicion ilegal
-            continue;
-        }
-        if (EnJaque(negras) && t == 1)  //si el negro esta en jaque y le toca al blanco
-        {
-            RPr[t][p][rb][rn] = 0;      //es posicion ilegal
-            continue;
-        }
-        if (ataques_rey[rb] & rey_n)    //si los reyes se estan atacando mutuamente (estan pegados)
-        {
-            RPr[t][p][rb][rn] = 0;      //ILEGAL
-            continue;
-        }
-        if (p == rb || p == rn || rb == rn)     //si coinciden los indices significaria q hay dos piezas en la misma casilla
-        {
-            RPr[t][p][rb][rn] = 0;      //ILEGAL
-            continue;
-        }
-        //eso descarta todas las posiciones ilegales (no importan mucho ya que el motor no permite ilegales de todas maneras)
-        //ahora hay q separar las posiciones tablas de las ganadas
-        if (!(rey_n & regladelcuadrado[negras][t][p]))	//si el rey no entra en el cuadrado
-        {
-            RPr[t][p][rb][rn] = 1;      //FINAL GANADO (0 = tablas o ilegal, 1 = ganado)
-            continue;
-        }
-        if (peones_b & mask_ah)         //entra si el peon es peon torre
-        {
-            if (rey_n & peon_pasado[blancas][p])    //si el rey negro esta en una casilla q evita el paso del peon blanco
-            {                                       //entonces es tablas facil
-                RPr[t][p][rb][rn] = 0;
-                continue;
-            }
-            if (t == negras && !(ataques_rey[rn] & regladelcuadrado[negras][blancas][p] & ~ataques_rey[rb]))
-            {                               //Se cumple cuando le toca al negro y esta dentro de la regla del cuadrado, pero no
-                RPr[t][p][rb][rn] = 1;      //tiene movimientos hacia el cuadrado tocandole a las blancas xq el rey blanco lo
-                continue;                   //esta cortando. Entonces ganan blancas
-            }
-            if (DistanciaColumnas(rn,p) == 2 && Fila(rn) > Fila(p))
-            {
-                RPr[t][p][rb][rn] = 0;
-                continue;
-            }
-            BYTE sq;
-            aux = peon_pasado[blancas][p];  //cargo las casillas q interesan para este caso en aux
-            while(1)                        //en este loop busco la menor distancia de rey_n a las casillas q producen tablas
-            {
-                sq = MSB(aux);
-                if (sq == 64)               //si se terminaron las casillas salgo
-                    break;
-                if (Distancia(rn,sq) < Distancia(rb,sq))
-                {
-                    RPr[t][p][rb][rn] = 0;
-                    break;
-                }
-                if (Distancia(rn,sq) <= Distancia(rb,sq) && t == negras)
-                {
-                    RPr[t][p][rb][rn] = 0;
-                    break;
-                }
-                aux ^= SetMask(sq);         //borro el bit correspondiente a la casilla ya considerada
-            }
-            if (t == blancas)
-            {
-                RPr[t][p][rb][rn] = 0;
-                break;
-            }
-//            if (ataques_rey[rn] & )
-//            {
-//
-//            }
-
-        }//end de peon torre
-        else            //aca esta el codigo para todos los otros finales de peon q no estan en las columnas torre
-        {
-            if (t == negras && ataques_rey[rn] & peones_b & ~ataques_rey[rb])   //rey_n dispone de una captura inmediata del peon
-            {
-                RPr[t][p][rb][rn] = 0;
-                    break;
-            }
-
-        }
-//                    return subtotal + 900;
-    }
-    }
-    }
-    }
-    BITBOARD ceros=0,unos=0,sinclasificar=0,incompleto=0;
-    for (t=0;t<2;t++)   //turno q le toca mover (0 negras 1 blancas)
-    {
-    for (p=0;p<64;p++)  //posicion del peon
-    {
-    for (rb=0;rb<64;rb++)  //posicion del rey blanco
-    {
-    for (rn=0;rn<64;rn++)  //posicion del rey negro
-    {
-        switch (RPr[t][p][rb][rn])
-        {
-            case 0:
-            {
-                ceros++;
-            }break;
-            case 1:
-            {
-                unos++;
-            }break;
-            default:
-            {
-                sinclasificar++;
-                if (SetMask(p) & mask_ah)
-                    incompleto++;
-            }break;
-        }
-    }
-    }
-    }
-    }
-}
-
 void EsperaJugada(char algeb[4])		//interpreta las jugadas enviadas por la GUI
 {
 	char a1,b1,c1,d1;
@@ -1228,23 +1087,6 @@ void Jugar(BYTE inicio,BYTE fin,BYTE bien)									//hace la jugada verdaderamen
 
 	turno ^= 1;
 	turno_c ^= 1;
-}
-
-int EvaluarRapido()     //solo balance material para ver si es posible aplicar poda de inutilidad
-{
-    total = 900 * (POPCNT(damas_b) - POPCNT(damas_n));
-	total += 500 * (POPCNT(torres_b) - POPCNT(torres_n));
-	total += 310 * (POPCNT(alfiles_b) - POPCNT(alfiles_n));
-	total += 300 * (POPCNT(caballos_b) - POPCNT(caballos_n));
-	total += 100 * (POPCNT(peones_b) - POPCNT(peones_n));
-	if ((alfiles_b & casillas_b) && (alfiles_b & casillas_n))
-		total += 30;
-	if ((alfiles_n & casillas_b) && (alfiles_n & casillas_n))
-		total -= 30;
-
-	if (turno_c == blancas)
-		return total;
-	return -total;
 }
 
 void LeeFEN(const std::string& auxfen)			    	//pide informacion del usuario acerca de la posicion inicial y deja todo listo para q comience la partida

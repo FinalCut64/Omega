@@ -28,6 +28,131 @@ int Evaluar()																	//determina el valor relativo (ajedrecistico) de l
 	return -total;
 }
 
+int EvaluarMJ()
+{
+	int subtotal = 0;
+	BITBOARD auxiliar;
+
+	//estructura de peones
+
+	auxiliar = peones_b;
+	while (auxiliar)
+	{
+		inicio = MSB(auxiliar);
+		auxiliar ^= SetMask(inicio);
+		total += peon_pos[blancas][inicio];									//incluyo las posiciones de los peones como un factor mas
+//		if (!(peon_pasado[blancas][inicio] & peones_n))						//si el peon esta pasado le sumo a las blancas un plus
+//			total += 25;
+//		if (!(peon_aislado[inicio] & peones_b))								//si el peon esta aislado le resto
+//			total -= 15;
+//		if (!(peones_conectados[inicio] & peones_b))						//si el peon esta desconectado de la estructura
+//			total -= 20; 													//lo castigo (no quiero estructuras tipo h4-g2-f4 o asi de horribles)
+		if (POPCNT(columna_mask[Columna(inicio)] & peones_b) > 1)			//si hay mas de un peon en la misma columna estan doblados y se penaliza
+			total -= 20;													//le quito 20 por cada peon (si hay dos doblados la perdida total es 40 y si son 3 son 60, etc.)
+	};
+	auxiliar = peones_n;
+	while (auxiliar)
+	{
+		inicio = MSB(auxiliar);
+		auxiliar ^= SetMask(inicio);
+		total -= peon_pos[negras][inicio];
+//		if (!(peon_pasado[negras][inicio] & peones_b))
+//			total -= 25;
+//		if (!(peon_aislado[inicio] & peones_n))
+//			total += 15;
+//		if (!(peones_conectados[inicio] & peones_n))
+//			total += 20;
+		if (POPCNT(columna_mask[Columna(inicio)] & peones_n) > 1)
+			total += 20;
+	};
+	auxiliar = caballos_b;
+	while (auxiliar)
+	{
+		inicio = MSB(auxiliar);
+		auxiliar ^= SetMask(inicio);
+		subtotal += caballo_pos[blancas][inicio];
+		subtotal += POPCNT(ataques_caballos[inicio] & (!piezas_b));  		//evalua la movilidad de caballos ademas
+	};
+	auxiliar = alfiles_b;
+	while (auxiliar)
+	{
+		inicio = MSB(auxiliar);
+		auxiliar ^= SetMask(inicio);
+		subtotal += alfil_pos[blancas][inicio];
+		subtotal += POPCNT(GeneraAlfil(inicio) & (!piezas_b));
+	};
+	auxiliar = torres_b;
+	while (auxiliar)
+	{
+		inicio = MSB(auxiliar);
+		auxiliar ^= SetMask(inicio);
+		subtotal += torre_pos[blancas][inicio];
+		subtotal += POPCNT(GeneraTorre(inicio) & (!piezas_b));
+		if (!(columna_mask[Columna(inicio)] & peones_b))					//si es una columna semiabierta (o posiblemente abierta)
+			subtotal += 25;													//le sumo por buena ubicacion
+	};
+	auxiliar = damas_b;
+	while (auxiliar)
+	{
+		inicio = MSB(auxiliar);
+		auxiliar ^= SetMask(inicio);
+		subtotal += dama_pos[inicio];
+        subtotal += POPCNT(GeneraAlfil(inicio) & (!piezas_b));
+        subtotal += POPCNT(GeneraTorre(inicio) & (!piezas_b));
+	};
+
+	//lo mismo para las piezas negras
+
+	auxiliar = caballos_n;
+	while (auxiliar)
+	{
+		inicio = MSB(auxiliar);
+		auxiliar ^= SetMask(inicio);
+		subtotal -= caballo_pos[negras][inicio];
+		subtotal += POPCNT(ataques_caballos[inicio] & (!piezas_n));
+	};
+	auxiliar = alfiles_n;
+	while (auxiliar)
+	{
+		inicio = MSB(auxiliar);
+		auxiliar ^= SetMask(inicio);
+		subtotal -= alfil_pos[negras][inicio];
+		subtotal -= POPCNT(GeneraAlfil(inicio) & (!piezas_n));
+	};
+	auxiliar = torres_n;
+	while (auxiliar)
+	{
+		inicio = MSB(auxiliar);
+		auxiliar ^= SetMask(inicio);
+		subtotal -= torre_pos[negras][inicio];
+		subtotal -= POPCNT(GeneraTorre(inicio) & (!piezas_n));
+		if (!(columna_mask[Columna(inicio)] & peones_n))
+			subtotal -= 25;
+	};
+	auxiliar = damas_n;
+	while (auxiliar)
+	{
+		inicio = MSB(auxiliar);
+		auxiliar ^= SetMask(inicio);
+		subtotal -= dama_pos[inicio];
+        subtotal -= POPCNT(GeneraAlfil(inicio) & (!piezas_n));
+        subtotal -= POPCNT(GeneraTorre(inicio) & (!piezas_n));
+	};
+
+	//seguridad del rey
+
+	inicio = MSB(rey_b);
+	subtotal += rey_pos[blancas][inicio];
+	inicio = MSB(rey_n);
+	subtotal -= rey_pos[negras][inicio];
+
+
+	//movilidad de piezas
+
+	//dominio del centro
+	return subtotal;
+}
+
 int EvaluarFinal()
 {
 	int subtotal = 0;
@@ -176,127 +301,19 @@ int EvaluarFinal()
 	return subtotal;
 }
 
-int EvaluarMJ()
+int EvaluarRapido()     //solo balance material para ver si es posible aplicar poda de inutilidad
 {
-	int subtotal = 0;
-	BITBOARD auxiliar;
+    total = 900 * (POPCNT(damas_b) - POPCNT(damas_n));
+	total += 500 * (POPCNT(torres_b) - POPCNT(torres_n));
+	total += 310 * (POPCNT(alfiles_b) - POPCNT(alfiles_n));
+	total += 300 * (POPCNT(caballos_b) - POPCNT(caballos_n));
+	total += 100 * (POPCNT(peones_b) - POPCNT(peones_n));
+	if ((alfiles_b & casillas_b) && (alfiles_b & casillas_n))
+		total += 30;
+	if ((alfiles_n & casillas_b) && (alfiles_n & casillas_n))
+		total -= 30;
 
-	//estructura de peones
-
-	auxiliar = peones_b;
-	while (auxiliar)
-	{
-		inicio = MSB(auxiliar);
-		auxiliar ^= SetMask(inicio);
-		total += peon_pos[blancas][inicio];									//incluyo las posiciones de los peones como un factor mas
-//		if (!(peon_pasado[blancas][inicio] & peones_n))						//si el peon esta pasado le sumo a las blancas un plus
-//			total += 25;
-//		if (!(peon_aislado[inicio] & peones_b))								//si el peon esta aislado le resto
-//			total -= 15;
-//		if (!(peones_conectados[inicio] & peones_b))						//si el peon esta desconectado de la estructura
-//			total -= 20; 													//lo castigo (no quiero estructuras tipo h4-g2-f4 o asi de horribles)
-		if (POPCNT(columna_mask[Columna(inicio)] & peones_b) > 1)			//si hay mas de un peon en la misma columna estan doblados y se penaliza
-			total -= 20;													//le quito 20 por cada peon (si hay dos doblados la perdida total es 40 y si son 3 son 60, etc.)
-	};
-	auxiliar = peones_n;
-	while (auxiliar)
-	{
-		inicio = MSB(auxiliar);
-		auxiliar ^= SetMask(inicio);
-		total -= peon_pos[negras][inicio];
-//		if (!(peon_pasado[negras][inicio] & peones_b))
-//			total -= 25;
-//		if (!(peon_aislado[inicio] & peones_n))
-//			total += 15;
-//		if (!(peones_conectados[inicio] & peones_n))
-//			total += 20;
-		if (POPCNT(columna_mask[Columna(inicio)] & peones_n) > 1)
-			total += 20;
-	};
-	auxiliar = caballos_b;
-	while (auxiliar)
-	{
-		inicio = MSB(auxiliar);
-		auxiliar ^= SetMask(inicio);
-		subtotal += caballo_pos[blancas][inicio];
-		subtotal += POPCNT(ataques_caballos[inicio] & (!piezas_b));  		//evalua la movilidad de caballos ademas
-	};
-	auxiliar = alfiles_b;
-	while (auxiliar)
-	{
-		inicio = MSB(auxiliar);
-		auxiliar ^= SetMask(inicio);
-		subtotal += alfil_pos[blancas][inicio];
-		subtotal += POPCNT(GeneraAlfil(inicio) & (!piezas_b));
-	};
-	auxiliar = torres_b;
-	while (auxiliar)
-	{
-		inicio = MSB(auxiliar);
-		auxiliar ^= SetMask(inicio);
-		subtotal += torre_pos[blancas][inicio];
-		subtotal += POPCNT(GeneraTorre(inicio) & (!piezas_b));
-		if (!(columna_mask[Columna(inicio)] & peones_b))					//si es una columna semiabierta (o posiblemente abierta)
-			subtotal += 25;													//le sumo por buena ubicacion
-	};
-	auxiliar = damas_b;
-	while (auxiliar)
-	{
-		inicio = MSB(auxiliar);
-		auxiliar ^= SetMask(inicio);
-		subtotal += dama_pos[inicio];
-        subtotal += POPCNT(GeneraAlfil(inicio) & (!piezas_b));
-        subtotal += POPCNT(GeneraTorre(inicio) & (!piezas_b));
-	};
-
-	//lo mismo para las piezas negras
-
-	auxiliar = caballos_n;
-	while (auxiliar)
-	{
-		inicio = MSB(auxiliar);
-		auxiliar ^= SetMask(inicio);
-		subtotal -= caballo_pos[negras][inicio];
-		subtotal += POPCNT(ataques_caballos[inicio] & (!piezas_n));
-	};
-	auxiliar = alfiles_n;
-	while (auxiliar)
-	{
-		inicio = MSB(auxiliar);
-		auxiliar ^= SetMask(inicio);
-		subtotal -= alfil_pos[negras][inicio];
-		subtotal -= POPCNT(GeneraAlfil(inicio) & (!piezas_n));
-	};
-	auxiliar = torres_n;
-	while (auxiliar)
-	{
-		inicio = MSB(auxiliar);
-		auxiliar ^= SetMask(inicio);
-		subtotal -= torre_pos[negras][inicio];
-		subtotal -= POPCNT(GeneraTorre(inicio) & (!piezas_n));
-		if (!(columna_mask[Columna(inicio)] & peones_n))
-			subtotal -= 25;
-	};
-	auxiliar = damas_n;
-	while (auxiliar)
-	{
-		inicio = MSB(auxiliar);
-		auxiliar ^= SetMask(inicio);
-		subtotal -= dama_pos[inicio];
-        subtotal -= POPCNT(GeneraAlfil(inicio) & (!piezas_n));
-        subtotal -= POPCNT(GeneraTorre(inicio) & (!piezas_n));
-	};
-
-	//seguridad del rey
-
-	inicio = MSB(rey_b);
-	subtotal += rey_pos[blancas][inicio];
-	inicio = MSB(rey_n);
-	subtotal -= rey_pos[negras][inicio];
-
-
-	//movilidad de piezas
-
-	//dominio del centro
-	return subtotal;
+	if (turno_c == blancas)
+		return total;
+	return -total;
 }
