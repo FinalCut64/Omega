@@ -12,7 +12,7 @@ BYTE Legal();								//se fija si la jugada es totalmente correcta en terminos l
 void Jugar(BYTE,BYTE,BYTE);					//esta es la q HACE la jugada (no durante el analisis sino de posta)
 void Analiza();								//busca la "mejor" jugada q se pueda (aca esta toda la magia y los errores jeje)
 
-typedef enum							//la casilla A1 corresponde al indice 0, H1 es 7, A8 es 56 y H8 es 63 y A1 corresponde al LSB de los 64 y H8 es el MSB
+typedef enum								//la casilla A1 corresponde al indice 0, H1 es 7, A8 es 56 y H8 es 63 y A1 corresponde al LSB de los 64 y H8 es el MSB
 {
   A1, B1, C1, D1, E1, F1, G1, H1,
   A2, B2, C2, D2, E2, F2, G2, H2,
@@ -22,7 +22,7 @@ typedef enum							//la casilla A1 corresponde al indice 0, H1 es 7, A8 es 56 y 
   A6, B6, C6, D6, E6, F6, G6, H6,
   A7, B7, C7, D7, E7, F7, G7, H7,
   A8, B8, C8, D8, E8, F8, G8, H8,
-  MALA_CASILLA							//MALA CASILLA se produce en varias situaciones en las q inicio o fin valen 64
+  MALA_CASILLA								//MALA CASILLA se produce en varias situaciones en las q inicio o fin valen 64
 }casillas;
 
 typedef enum
@@ -62,7 +62,7 @@ enum Limites
 };
 
 extern Limites limite;
-extern unsigned int prof_max,depth_jugada,tiempo_jugada;
+extern unsigned int prof_max,prof_max2,depth_jugada,tiempo_jugada;
 extern unsigned long long nodos_jugada;
 extern BYTE turno,turno_c,colorpic,bien,semibien,inicio,fin,pieza;
 extern BYTE jugadas[MAXPROF][600],Qcapturas[40][80],Qcorona[40];
@@ -71,7 +71,6 @@ extern BYTE legales[MAXPROF],jugadas_reversibles,nulo,Qcomio[40];
 extern BYTE salir,unica;
 //BYTE ext;
 extern char fen[85];                               //como maximo el string FEN puede tener 85 caracteres
-extern char planilla[7][400];                      //permite anotar una partida de hasta 400 jugadas
 extern unsigned int ply_count;
 extern BYTE mcut;                                  //indica si se esta haciendo o no una busqueda multi cut
 
@@ -83,7 +82,7 @@ extern int valoracion,val,estimo,total;
 extern int killer[MAXPROF][2];
 extern unsigned long long divide[600]; //para la funcion divide dentro del perft() q permite detectar errores en el generador de movs
 extern unsigned long long nodos,Qnodos,nodosnulos,cortesnulo,llamadasevaluar,cortes_inut_inversa;
-extern unsigned long long cantventanas,falloventana,eficiencia_1,eficiencia_2,eficiencia,qpasaaca;
+extern unsigned long long cantventanas,falloventana,eficiencia_1,eficiencia_2,eficiencia;
 extern float cant_analisis,proftotal,profmedia;					//igual q estas q muestran el nivel de juego promedio de la partida
 
 extern std::string recibido;

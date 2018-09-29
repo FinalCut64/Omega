@@ -37,15 +37,15 @@
 	<string>
 	"global.h"
 
-1536537136 source:c:\users\user\desktop\demian\omega\bitboard.cpp
+1538191056 source:c:\users\user\desktop\demian\omega\bitboard.cpp
 	"bitboard.h"
 
-1536537136 c:\users\user\desktop\demian\omega\bitboard.h
+1537162467 c:\users\user\desktop\demian\omega\bitboard.h
 	"definiciones.h"
 
-1537000592 c:\users\user\desktop\demian\omega\definiciones.h
+1537162535 c:\users\user\desktop\demian\omega\definiciones.h
 
-1537132487 source:c:\users\user\desktop\demian\omega\main.cpp
+1538196760 source:c:\users\user\desktop\demian\omega\main.cpp
 	<iostream>
 	<string>
 	<windows.h>
@@ -58,25 +58,71 @@
 	"global.h"
 	"bitboard.h"
 	"tt.h"
+	"movgen.h"
+	"search.h"
 
-1537044779 c:\users\user\desktop\demian\omega\global.h
+1538196537 c:\users\user\desktop\demian\omega\global.h
 	<string>
 	"definiciones.h"
 
-1536537136 c:\users\user\desktop\demian\omega\tt.h
+1537162499 c:\users\user\desktop\demian\omega\tt.h
 	"definiciones.h"
 
-1536537136 source:c:\users\user\desktop\demian\omega\tt.cpp
+1538196729 source:c:\users\user\desktop\demian\omega\tt.cpp
 	<windows.h>
 	"global.h"
 	"tt.h"
 	"bitboard.h"
 
-1537127919 source:c:\users\user\desktop\demian\omega\uci.cpp
+1538191573 source:c:\users\user\desktop\demian\omega\uci.cpp
 	<iostream>
 	<string>
 	<math.h>
-	<thread>
 	"global.h"
 	"tt.h"
+
+1538194636 source:c:\users\user\desktop\demian\omega\eval.cpp
+	"eval.h"
+	"global.h"
+	"definiciones.h"
+	"bitboard.h"
+	"movgen.h"
+
+1538194137 c:\users\user\desktop\demian\omega\eval.h
+
+1538195420 c:\users\user\desktop\demian\omega\movgen.h
+	"definiciones.h"
+
+1538195733 c:\users\user\desktop\demian\omega\search.h
+
+1538195420 source:c:\users\user\desktop\demian\omega\movgen.cpp
+	"movgen.h"
+	"global.h"
+	"bitboard.h"
+	"tt.h"
+
+1538195317 source:c:\users\user\desktop\demian\omega\quies.cpp
+	"quies.h"
+	"global.h"
+	"tt.h"
+	"eval.h"
+	"movgen.h"
+	"bitboard.h"
+
+1538195192 c:\users\user\desktop\demian\omega\quies.h
+	"definiciones.h"
+
+1538195733 source:c:\users\user\desktop\demian\omega\search.cpp
+	<iostream>
+	<string>
+	<windows.h>
+	<setjmp.h>
+	<math.h>
+	"search.h"
+	"global.h"
+	"definiciones.h"
+	"tt.h"
+	"movgen.h"
+	"eval.h"
+	"quies.h"
 

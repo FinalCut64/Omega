@@ -49,6 +49,6 @@
 
 typedef unsigned long long BITBOARD;	//llamo BITBOARD a los long long para q se haga mas facil de entender
 typedef unsigned char BYTE;             //llamo BYTE a los char para q se haga mas facil de entender
-
+typedef unsigned int UINT;
 
 #endif // DEFINICIONES_H_INCLUDED

@@ -1,7 +1,6 @@
 #include <iostream>
 #include <string>
 #include <math.h>
-#include <thread>
 
 #include "global.h"
 #include "tt.h"

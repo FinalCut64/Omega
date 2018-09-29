@@ -71,7 +71,6 @@ struct sevaltt
     BITBOARD confirma;
     int val;
 } * evaltt;
-
 struct sperfttt
 {
     BITBOARD confirma;
@@ -312,7 +311,7 @@ void Save_tt(unsigned char prof,int val,char bandera,int mejor)
     phashe->bandera = bandera;
     phashe->prof = prof;
     phashe->mejorjugada = mejor;
-    phashe->edad = ply_count;
+//    phashe->edad = ply_count;
 }
 
 int Probar_tt(BYTE prof,int alfa,int beta)
@@ -329,9 +328,9 @@ int Probar_tt(BYTE prof,int alfa,int beta)
             {
                 val = phashe->val;
                 if (val > 29000)
-                    val += ply_count - phashe->edad;
+//                    val += ply_count - phashe->edad;
                 if (val < -29000)
-                    val -= ply_count - phashe->edad;
+//                    val -= ply_count - phashe->edad;
                 return val;
             }
             if ((phashe->bandera == TT_ALFA) && (phashe->val <= alfa))
@@ -479,6 +478,3 @@ void Save_perfttt(BITBOARD nodos,BYTE prof)       //guarda la cant de nodos hoja
     phashe->nodos = nodos;
     phashe->prof = prof;
 }
-
-
-

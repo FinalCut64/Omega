@@ -1,4 +1,3 @@
-//#include "definiciones.h"
 #include "bitboard.h"
 
 BYTE LSB(BITBOARD x)
